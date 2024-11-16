@@ -7,45 +7,69 @@ const {
     updatePassword,
     deleteUserByEmail,
 } = require('../models/userModel');
-const { sendOtpEmail } = require('../utils/emailService');
+const { sendActivationEmail, sendOtpEmail } = require('../utils/emailService');
 const { generateOtp } = require('../utils/otpUtil');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
 // JWT Helpers
-const generateAccessToken = (userId) => jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '1m' });
-
-// Get Users
-exports.getUsers = async (req, res, next) => {
-    try {
-        const users = await getAllUsers();
-
-        if (users.length === 0) {
-            return res.status(404).json({ message: 'No users found' });
-        }
-
-        res.status(200).json({ users });
-    } catch (error) {
-        next(error);
-    }
-};
+const generateAccessToken = (userId) => jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '1d' });
 
 // Register
 exports.register = async (req, res, next) => {
     try {
         const { email, password } = req.body;
 
+        // Check if the email is already in use
         const existingUser = await findUserByEmail(email);
-        if (existingUser) return res.status(400).json({ message: 'Email already in use' });
+        if (existingUser) {
+            return res.status(400).json({ message: 'Email already in use.' });
+        }
 
+        // Generate a secure token with email and hashed password
         const hashedPassword = await bcrypt.hash(password, 10);
+        const activationToken = jwt.sign(
+            { email, hashedPassword },
+            process.env.JWT_SECRET,
+            { expiresIn: '24h' } // Token valid for 24 hours
+        );
 
-        // Create user without sending OTP
+        const activationLink = `${process.env.BACKEND_URL}/auth/activate?token=${activationToken}`;
+
+        // Send activation email
+        await sendActivationEmail(email, activationLink);
+
+        res.status(200).json({ message: 'Activation email sent. Please check your inbox.' });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Activate Account After Registration
+exports.activateAccount = async (req, res, next) => {
+    try {
+        const { token } = req.query;
+
+        // Verify and decode the JWT
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+        const { email, hashedPassword } = decoded;
+
+        // Check if the user already exists (just in case)
+        const existingUser = await findUserByEmail(email);
+        if (existingUser) {
+            return res.status(400).json({ message: 'Account already activated or email in use.' });
+        }
+
+        // Create the user in the database
         await createUser(email, hashedPassword);
 
-        res.status(201).json({ message: 'User registered successfully.' });
+        res.status(201).json({ message: 'Account activated successfully.' });
     } catch (error) {
+        if (error.name === 'TokenExpiredError') {
+            return res.status(400).json({ message: 'Activation link expired. Please register again.' });
+        }
         next(error);
     }
 };
@@ -178,6 +202,22 @@ exports.logout = async (req, res, next) => {
     }
 };
 
+// Get List of Users
+exports.getUsers = async (req, res, next) => {
+    try {
+        const users = await getAllUsers();
+
+        if (users.length === 0) {
+            return res.status(404).json({ message: 'No users found' });
+        }
+
+        res.status(200).json({ users });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Delete User
 exports.deleteUser = async (req, res, next) => {
     try {
         const { email } = req.body;

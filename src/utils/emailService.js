@@ -9,12 +9,25 @@ const transporter = nodemailer.createTransport({
     }
 });
 
+exports.sendActivationEmail = async (email, activationLink) => {
+    const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: email,
+        subject: 'Activate Your Account',
+        text: `Click the link to activate your account: ${activationLink}`,
+        html: `<p>Click the link below to activate your account:</p>
+               <a href="${activationLink}">Activate Account</a>`,
+    };
+    await transporter.sendMail(mailOptions);
+};
+
 exports.sendOtpEmail = async (email, otp) => {
     const mailOptions = {
         from: process.env.EMAIL_USER,
         to: email,
-        subject: 'Your OTP Code',
-        text: `Your OTP code is ${otp}. It will expire in 5 minutes.`
+        subject: 'OTP Code Login Reimbify',
+        text: `Your OTP code for login Reimbify is ${otp}, it will expire in 5 minutes.
+        Do not share it with anyone and report to admin if this is not you.`,
     };
     await transporter.sendMail(mailOptions);
 };
