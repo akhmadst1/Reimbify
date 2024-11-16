@@ -18,6 +18,15 @@ exports.findUserByEmail = async (email) => {
     return rows[0];
 };
 
+// Find a user by ID
+exports.findUserById = async (ID) => {
+    const query = `
+        SELECT * FROM users WHERE id = ?
+    `;
+    const [rows] = await pool.query(query, [ID]);
+    return rows[0];
+};
+
 // Update the OTP code and expiry time for a user
 exports.updateOtp = async (email, otp, otpExpiresAt) => {
     const query = `

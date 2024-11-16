@@ -1,6 +1,5 @@
 const express = require('express');
 const {
-    getUsers,
     register,
     activateAccount,
     login,
@@ -9,10 +8,12 @@ const {
     forgotPassword,
     resetPassword,
     changePassword,
-    logout,
+    getUsers,
+    getSingleUser,
     deleteUser
 } = require('../controllers/authController');
 
+const { verifyToken } = require('../middlewares/authMiddleware');
 const router = express.Router();
 
 router.post('/register', register);
@@ -22,9 +23,9 @@ router.post('/verify-otp', verifyOtp);
 router.post('/resend-otp', resendOtp);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
-router.post('/change-password', changePassword);
-router.post('/logout', logout);
-router.get('/users', getUsers);
-router.post('/delete', deleteUser);
+router.post('/change-password', verifyToken, changePassword);
+router.get('/users', verifyToken, getUsers);
+router.get('/user', verifyToken, getSingleUser);
+router.post('/delete', verifyToken, deleteUser);
 
 module.exports = router;

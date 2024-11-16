@@ -1,10 +1,11 @@
 const {
-    getAllUsers,
     createUser,
     verifyOtp,
-    findUserByEmail,
     updateOtp,
     updatePassword,
+    getAllUsers,
+    findUserByEmail,
+    findUserById,
     deleteUserByEmail,
 } = require('../models/userModel');
 const { sendActivationEmail, sendOtpEmail } = require('../utils/emailService');
@@ -82,7 +83,7 @@ exports.login = async (req, res, next) => {
 
         if (!user) return res.status(404).json({ message: 'User not found' });
 
-        const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+        const isPasswordValid = await bcrypt.compare(password, user.password_hashed);
         if (!isPasswordValid) return res.status(400).json({ message: 'Invalid password' });
 
         // Generate and send OTP for verification
@@ -180,23 +181,16 @@ exports.changePassword = async (req, res, next) => {
         const user = await findUserByEmail(email);
         if (!user) return res.status(404).json({ message: 'User not found' });
 
-        const isPasswordValid = await bcrypt.compare(oldPassword, user.password);
+        const isPasswordValid = await bcrypt.compare(oldPassword, user.password_hashed);
         if (!isPasswordValid) return res.status(400).json({ message: 'Invalid current password' });
 
         const hashedPassword = await bcrypt.hash(newPassword, 10);
         await updatePassword(email, hashedPassword);
 
-        res.status(200).json({ message: 'Password changed successfully.', user });
-    } catch (error) {
-        next(error);
-    }
-};
+        // Immediately mark OTP as expired
+        await updateOtp(email, null, null);
 
-// Logout
-exports.logout = async (req, res, next) => {
-    try {
-        // Client-side token removal
-        res.status(200).json({ message: 'Logged out successfully.' });
+        res.status(200).json({ message: 'Password changed successfully.', user });
     } catch (error) {
         next(error);
     }
@@ -212,6 +206,33 @@ exports.getUsers = async (req, res, next) => {
         }
 
         res.status(200).json({ users });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Get Single User
+exports.getSingleUser = async (req, res, next) => {
+    try {
+        const { email, id } = req.query;
+
+        if (email) {
+            const user = await findUserByEmail(email);
+            if (!user) {
+                return res.status(404).json({ message: 'User not found by email' });
+            }
+            return res.status(200).json({ user });
+        }
+
+        if (id) {
+            const user = await findUserById(id);
+            if (!user) {
+                return res.status(404).json({ message: 'User not found by ID' });
+            }
+            return res.status(200).json({ user });
+        }
+
+        return res.status(400).json({ message: 'Please provide either email or id' });
     } catch (error) {
         next(error);
     }
