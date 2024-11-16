@@ -9,7 +9,6 @@ const app = express();
 // Middleware
 app.use(express.json());
 app.use(cors({ origin: '*' }));
-app.use(helmet());
 
 // Routes
 app.use('/auth', authRoutes);
