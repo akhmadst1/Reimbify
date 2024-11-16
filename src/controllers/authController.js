@@ -1,6 +1,3 @@
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const { sendOtpEmail } = require('../utils/emailService');
 const {
     getAllUsers,
     createUser,
@@ -9,13 +6,15 @@ const {
     updateOtp,
     updatePassword,
     deleteUserByEmail,
-    markUserAsVerified
 } = require('../models/userModel');
-const { generateOtp, validateOtp } = require('../utils/otpUtil');
+const { sendOtpEmail } = require('../utils/emailService');
+const { generateOtp } = require('../utils/otpUtil');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
 // JWT Helpers
-const generateAccessToken = (userId) => jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '15m' });
+const generateAccessToken = (userId) => jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '1m' });
 
 // Get Users
 exports.getUsers = async (req, res, next) => {
@@ -122,10 +121,12 @@ exports.forgotPassword = async (req, res, next) => {
         if (!user) return res.status(404).json({ message: 'User not found' });
 
         const otp = generateOtp();
-        await updateOtp(email, otp);
+        const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
+
+        await updateOtp(email, otp, otpExpiresAt);
         await sendOtpEmail(email, otp);
 
-        res.status(200).json({ message: 'OTP sent for password reset.' });
+        res.status(200).json({ message: 'OTP for reset password sent to email.' });
     } catch (error) {
         next(error);
     }
@@ -135,7 +136,7 @@ exports.forgotPassword = async (req, res, next) => {
 exports.resetPassword = async (req, res, next) => {
     try {
         const { email, otp, newPassword } = req.body;
-        const isValid = await validateOtp(email, otp);
+        const isValid = await verifyOtp(email, otp);
 
         if (!isValid) return res.status(400).json({ message: 'Invalid or expired OTP' });
 
