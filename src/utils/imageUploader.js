@@ -19,10 +19,12 @@ function getPublicUrl(filename) {
 
 let ImgUpload = {}
 
-ImgUpload.uploadToGcs = (req, res, next) => {
+ImgUpload.uploadToGcsProfileImages = (req, res, next) => {
     if (!req.file) return next()
 
-    const gcsname = Date.now() + req.file.originalname
+    const { id } = req.query;
+
+    const gcsname = 'profile_images/' + id
     const file = bucket.file(gcsname)
 
     const stream = file.createWriteStream({
@@ -45,4 +47,35 @@ ImgUpload.uploadToGcs = (req, res, next) => {
     stream.end(req.file.buffer)
 }
 
-module.exports = ImgUpload
+ImgUpload.uploadToGcsReceipts = (req, res, next) => {
+    if (!req.file) return next()
+
+    const { id } = req.query;
+
+    const gcsname = 'receipts/' + id + '/' + req.file.originalname;
+    const file = bucket.file(gcsname)
+
+    const stream = file.createWriteStream({
+        metadata: {
+            contentType: req.file.mimetype
+        }
+    })
+
+    stream.on('error', (err) => {
+        req.file.cloudStorageError = err
+        next(err)
+    })
+
+    stream.on('finish', () => {
+        req.file.cloudStorageObject = gcsname
+        req.file.cloudStoragePublicUrl = getPublicUrl(gcsname)
+        next()
+    })
+
+    stream.end(req.file.buffer)
+}
+
+module.exports = {
+    ImgUpload,
+    bucket,
+};

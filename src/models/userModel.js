@@ -108,7 +108,7 @@ exports.updateProfileImage = async (id, profileImageUrl) => {
         SET profile_image_url = ? 
         WHERE id = ?
     `;
-    await pool.query(query, [role, profileImageUrl, id]);
+    await pool.query(query, [profileImageUrl, id]);
 };
 
 // Fetch all users from the database
