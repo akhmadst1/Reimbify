@@ -97,7 +97,7 @@ exports.login = async (req, res, next) => {
         await updateOtp(user.id, otp, otpExpiresAt);
         await sendOtpEmail(email, otp);
 
-        res.status(200).json({ message: 'OTP sent to email. Verify to complete login.', userId: user.id, email: email });
+        res.status(200).json({ message: 'OTP sent to email. Verify to complete login.', user_id: user.id, email: email });
     } catch (error) {
         next(error);
     }
@@ -118,7 +118,7 @@ exports.verifyOtp = async (req, res, next) => {
         // Generate short-lived access token
         const accessToken = generateAccessToken(id);
 
-        res.status(200).json({ message: 'Login successful.', userId: id, accessToken });
+        res.status(200).json({ message: 'Login successful.', user_id: id, access_token: accessToken });
     } catch (error) {
         next(error);
     }
@@ -137,7 +137,7 @@ exports.resendOtp = async (req, res, next) => {
         await updateOtp(user.id, newOtp, otpExpiresAt);
         await sendOtpEmail(email, newOtp);
 
-        res.status(200).json({ message: 'OTP resent to email.', userId: user.id, email: email });
+        res.status(200).json({ message: 'OTP resent to email.', user_id: user.id, email: email });
     } catch (error) {
         next(error);
     }
@@ -156,7 +156,7 @@ exports.forgotPassword = async (req, res, next) => {
         await updateOtp(user.id, otp, otpExpiresAt);
         await sendOtpEmail(email, otp);
 
-        res.status(200).json({ message: 'OTP for reset password sent to email.', userId: user.id, email: email });
+        res.status(200).json({ message: 'OTP for reset password sent to email.', user_id: user.id, email: email });
     } catch (error) {
         next(error);
     }
