@@ -23,16 +23,20 @@ exports.register = async (req, res, next) => {
     try {
         const { email, password, name, department, role } = req.body;
 
+        const defaultRole = role || 'user'; // Default role is 'user'
+
         // Check if the email is already in use
         const existingUser = await findUserByEmail(email);
         if (existingUser) {
             return res.status(400).json({ message: 'Email already in use.' });
         }
 
-        // Generate a secure token with email and hashed password
+        // Hash the password
         const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Generate activation token
         const activationToken = jwt.sign(
-            { email, hashedPassword, name, department, role },
+            { email, hashedPassword, name, department, defaultRole },
             process.env.JWT_SECRET,
             { expiresIn: '24h' } // Token valid for 24 hours
         );
@@ -56,7 +60,7 @@ exports.activateAccount = async (req, res, next) => {
         // Verify and decode the JWT
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-        const { email, hashedPassword, name, department, role } = decoded;
+        const { email, hashedPassword, name, department, defaultRole } = decoded;
 
         // Check if the user already exists (just in case)
         const existingUser = await findUserByEmail(email);
@@ -65,7 +69,7 @@ exports.activateAccount = async (req, res, next) => {
         }
 
         // Create the user in the database
-        await createUser(email, hashedPassword, name, department, role);
+        await createUser(email, hashedPassword, name, department, defaultRole);
 
         res.status(201).json({ message: 'Account activated successfully.' });
     } catch (error) {

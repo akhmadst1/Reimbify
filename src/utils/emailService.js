@@ -25,8 +25,8 @@ exports.sendOtpEmail = async (email, otp) => {
     const mailOptions = {
         from: process.env.EMAIL_USER,
         to: email,
-        subject: 'OTP Code Login Reimbify',
-        text: `Your OTP code for login Reimbify is ${otp}, it will expire in 5 minutes.
+        subject: 'OTP Code Reimbify',
+        text: `Your OTP code for Reimbify is ${otp}, it will expire in 5 minutes.
         Do not share it with anyone and report to admin if this is not you.`,
     };
     await transporter.sendMail(mailOptions);
