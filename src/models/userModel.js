@@ -92,13 +92,23 @@ exports.updateDepartment = async (id, department) => {
 };
 
 // Update user role
-exports.updateDepartment = async (id, role) => {
+exports.updateRole = async (id, role) => {
     const query = `
         UPDATE users 
         SET role = ? 
         WHERE id = ?
     `;
     await pool.query(query, [role, id]);
+};
+
+// Update user profile
+exports.updateProfileImage = async (id, profileImageUrl) => {
+    const query = `
+        UPDATE users 
+        SET profile_image_url = ? 
+        WHERE id = ?
+    `;
+    await pool.query(query, [role, profileImageUrl, id]);
 };
 
 // Fetch all users from the database
