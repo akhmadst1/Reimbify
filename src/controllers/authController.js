@@ -165,12 +165,12 @@ exports.forgotPassword = async (req, res, next) => {
 // Reset Password
 exports.resetPassword = async (req, res, next) => {
     try {
-        const { id, otp, newPassword } = req.body;
+        const { id, otp, new_password } = req.body;
         const isValid = await verifyOtp(id, otp);
 
         if (!isValid) return res.status(400).json({ message: 'Invalid or expired OTP' });
 
-        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        const hashedPassword = await bcrypt.hash(new_password, 10);
         await updatePassword(id, hashedPassword);
 
         // Immediately mark OTP as expired
@@ -185,14 +185,14 @@ exports.resetPassword = async (req, res, next) => {
 // Change Password
 exports.changePassword = async (req, res, next) => {
     try {
-        const { id, oldPassword, newPassword } = req.body;
+        const { id, old_password, new_password } = req.body;
         const user = await findUserById(id);
         if (!user) return res.status(404).json({ message: 'User not found' });
 
-        const isPasswordValid = await bcrypt.compare(oldPassword, user.password_hashed);
+        const isPasswordValid = await bcrypt.compare(old_password, user.password_hashed);
         if (!isPasswordValid) return res.status(400).json({ message: 'Invalid current password' });
 
-        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        const hashedPassword = await bcrypt.hash(new_password, 10);
         await updatePassword(id, hashedPassword);
 
         res.status(200).json({ message: 'Password changed successfully.'});
