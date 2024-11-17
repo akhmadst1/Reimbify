@@ -9,7 +9,6 @@ const {
     resetPassword,
     changePassword,
     getUsers,
-    getSingleUser,
     deleteUser
 } = require('../controllers/authController');
 
@@ -24,8 +23,7 @@ router.post('/resend-otp', resendOtp);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
 router.post('/change-password', verifyToken, changePassword);
-router.get('/users', verifyToken, getUsers);
-router.get('/user', verifyToken, getSingleUser);
+router.get('/users', getUsers);
 router.post('/delete', verifyToken, deleteUser);
 
 module.exports = router;
