@@ -5,6 +5,7 @@ require('dotenv').config();
 
 const authRoutes = require('./routes/auth');
 const profileRoutes = require('./routes/profile');
+const bankAccountRoutes = require('./routes/bankAccount');
 
 const app = express();
 
@@ -16,6 +17,7 @@ app.use(cors({ origin: '*' }));
 // Routes
 app.use('/auth', authRoutes);
 app.use('/profile', profileRoutes);
+app.use('/bank-account', bankAccountRoutes);
 
 // Global Error Handler
 app.use((err, req, res, next) => {
