@@ -239,7 +239,7 @@ exports.getUsers = async (req, res, next) => {
 // Delete User
 exports.deleteUser = async (req, res, next) => {
     try {
-        const { email, userId } = req.body;
+        const { email, userId } = req.query;
 
         if (!email && !userId) {
             return res.status(400).json({ message: 'Please provide either email or user id' });
