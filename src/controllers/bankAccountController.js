@@ -5,6 +5,7 @@ const {
     updateBankAccount,
     deleteBankAccountById,
     deleteBankAccountsByUserId,
+    getAllBankAccounts,
 } = require('../models/bankAccountModel');
 const { findUserById } = require('../models/userModel'); // Assuming a user model exists for validation
 
@@ -53,7 +54,11 @@ exports.getBankAccounts = async (req, res, next) => {
             return res.status(200).json({ accounts });
         }
 
-        return res.status(400).json({ message: 'Please provide either account id or user id.' });
+        const accounts = await getAllBankAccounts();
+        if (!accounts) {
+            return res.status(404).json({ message: 'Bank account not found.' });
+        }
+        return res.status(200).json({ accounts });
     } catch (error) {
         next(error);
     }

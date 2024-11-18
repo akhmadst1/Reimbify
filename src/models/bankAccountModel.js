@@ -14,6 +14,15 @@ exports.createBankAccount = async (accountTitle, accountHolderName, accountNumbe
     }
 };
 
+// Find all bank accounts
+exports.getAllBankAccounts = async () => {
+    const query = `
+        SELECT * FROM bank_account
+    `;
+    const [rows] = await pool.query(query);
+    return rows;
+};
+
 // Find a bank account by ID
 exports.findBankAccountById = async (accountId) => {
     const query = `
