@@ -10,6 +10,6 @@ const router = express.Router();
 
 router.put('/update-profile-details', verifyToken, updateProfileDetails);
 router.put('/update-profile-image', verifyToken, updateProfileImage);
-router.put('/delete-profile-image', verifyToken, deleteProfileImage);
+router.delete('/delete-profile-image', verifyToken, deleteProfileImage);
 
 module.exports = router;

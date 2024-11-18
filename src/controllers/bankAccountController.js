@@ -72,7 +72,7 @@ exports.updateBankAccount = async (req, res, next) => {
 // Delete a bank account by ID or all accounts by userId
 exports.deleteBankAccounts = async (req, res, next) => {
     try {
-        const { id, userId } = req.body;
+        const { id, userId } = req.query;
 
         if (id) {
             // Delete account by ID
