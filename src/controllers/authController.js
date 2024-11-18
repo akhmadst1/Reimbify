@@ -94,10 +94,10 @@ exports.login = async (req, res, next) => {
         // Generate and send OTP for verification
         const otp = generateOtp();
         const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000); // OTP valid for 5 minutes
-        await updateOtp(user.id, otp, otpExpiresAt);
+        await updateOtp(user.user_id, otp, otpExpiresAt);
         await sendOtpEmail(email, otp);
 
-        res.status(200).json({ message: 'OTP sent to email. Verify to complete login.', userId: user.id, email });
+        res.status(200).json({ message: 'OTP sent to email. Verify to complete login.', userId: user.user_id, email });
     } catch (error) {
         next(error);
     }
@@ -106,19 +106,19 @@ exports.login = async (req, res, next) => {
 // Verify OTP and Issue Token
 exports.verifyOtp = async (req, res, next) => {
     try {
-        const { id, otp } = req.body;
+        const { userId, otp } = req.body;
 
-        const isValid = await verifyOtp(id, otp);
+        const isValid = await verifyOtp(userId, otp);
 
         if (!isValid) return res.status(400).json({ message: 'Invalid or expired OTP' });
 
         // Immediately mark OTP as expired
-        await updateOtp(id, null, null);
+        await updateOtp(userId, null, null);
 
         // Generate short-lived access token
-        const accessToken = generateAccessToken(id);
+        const accessToken = generateAccessToken(userId);
 
-        res.status(200).json({ message: 'Login successful.', userId: id, accessToken });
+        res.status(200).json({ message: 'Login successful.', userId: userId, accessToken });
     } catch (error) {
         next(error);
     }
@@ -127,17 +127,17 @@ exports.verifyOtp = async (req, res, next) => {
 // Resend OTP
 exports.resendOtp = async (req, res, next) => {
     try {
-        const { email } = req.body;
-        const user = await findUserByEmail(email);
+        const { userId } = req.body;
+        const user = await findUserById(userId);
         if (!user) return res.status(404).json({ message: 'User not found' });
 
         const newOtp = generateOtp();
         const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
-        await updateOtp(user.id, newOtp, otpExpiresAt);
-        await sendOtpEmail(email, newOtp);
+        await updateOtp(user.user_id, newOtp, otpExpiresAt);
+        await sendOtpEmail(user.email, newOtp);
 
-        res.status(200).json({ message: 'OTP resent to email.', userId: user.id, email });
+        res.status(200).json({ message: 'OTP resent to email.', userId: user.user_id, email: user.email });
     } catch (error) {
         next(error);
     }
@@ -153,10 +153,10 @@ exports.forgotPassword = async (req, res, next) => {
         const otp = generateOtp();
         const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
-        await updateOtp(user.id, otp, otpExpiresAt);
+        await updateOtp(user.user_id, otp, otpExpiresAt);
         await sendOtpEmail(email, otp);
 
-        res.status(200).json({ message: 'OTP for reset password sent to email.', userId: user.id, email });
+        res.status(200).json({ message: 'OTP for reset password sent to email.', userId: user.user_id, email });
     } catch (error) {
         next(error);
     }
@@ -165,16 +165,16 @@ exports.forgotPassword = async (req, res, next) => {
 // Reset Password
 exports.resetPassword = async (req, res, next) => {
     try {
-        const { id, otp, newPassword } = req.body;
-        const isValid = await verifyOtp(id, otp);
+        const { userId, otp, newPassword } = req.body;
+        const isValid = await verifyOtp(userId, otp);
 
         if (!isValid) return res.status(400).json({ message: 'Invalid or expired OTP' });
 
         const hashedPassword = await bcrypt.hash(newPassword, 10);
-        await updatePassword(id, hashedPassword);
+        await updatePassword(userId, hashedPassword);
 
         // Immediately mark OTP as expired
-        await updateOtp(id, null, null);
+        await updateOtp(userId, null, null);
 
         res.status(200).json({ message: 'Password reset successfully.' });
     } catch (error) {
@@ -185,15 +185,15 @@ exports.resetPassword = async (req, res, next) => {
 // Change Password
 exports.changePassword = async (req, res, next) => {
     try {
-        const { id, oldPassword, newPassword } = req.body;
-        const user = await findUserById(id);
+        const { userId, oldPassword, newPassword } = req.body;
+        const user = await findUserById(userId);
         if (!user) return res.status(404).json({ message: 'User not found' });
 
         const isPasswordValid = await bcrypt.compare(oldPassword, user.password_hashed);
         if (!isPasswordValid) return res.status(400).json({ message: 'Invalid current password' });
 
         const hashedPassword = await bcrypt.hash(newPassword, 10);
-        await updatePassword(id, hashedPassword);
+        await updatePassword(userId, hashedPassword);
 
         res.status(200).json({ message: 'Password changed successfully.' });
     } catch (error) {
@@ -204,11 +204,11 @@ exports.changePassword = async (req, res, next) => {
 // Get Users (all or by ID/email)
 exports.getUsers = async (req, res, next) => {
     try {
-        const { email, id } = req.query;
+        const { email, userId } = req.query;
 
         // Handle case: Get user by ID
-        if (id) {
-            const user = await findUserById(id);
+        if (userId) {
+            const user = await findUserById(userId);
             if (!user) {
                 return res.status(404).json({ message: 'User not found by ID' });
             }
@@ -239,20 +239,20 @@ exports.getUsers = async (req, res, next) => {
 // Delete User
 exports.deleteUser = async (req, res, next) => {
     try {
-        const { email, id } = req.body;
+        const { email, userId } = req.body;
 
-        if (!email && !id) {
-            return res.status(400).json({ message: 'Please provide either email or id' });
+        if (!email && !userId) {
+            return res.status(400).json({ message: 'Please provide either email or user id' });
         }
 
         let user;
 
         // Find user by ID if provided
-        if (id) {
-            user = await findUserById(id);
+        if (userId) {
+            user = await findUserById(userId);
             if (!user) return res.status(404).json({ message: 'User not found by ID' });
 
-            await deleteUserById(id);
+            await deleteUserById(userId);
         }
 
         // Find user by email if provided

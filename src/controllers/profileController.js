@@ -15,33 +15,33 @@ const multer = Multer({
 
 exports.updateProfileDetails = async (req, res, next) => {
     try {
-        const { id } = req.query; // User ID
+        const { userId } = req.query; // User ID
         const { name, department, role } = req.body;
 
         // Validate input
-        if (!id) {
+        if (!userId) {
             return res.status(400).json({ message: 'User ID is required' });
         }
 
         // Check if the user exists
-        const user = await findUserById(id);
+        const user = await findUserById(userId);
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
 
         // Update fields if provided
         if (name) {
-            await updateName(id, name);
+            await updateName(userId, name);
         }
         if (department) {
-            await updateDepartment(id, department);
+            await updateDepartment(userId, department);
         }
         if (role) {
-            await updateRole(id, role);
+            await updateRole(userId, role);
         }
 
         // Fetch updated user
-        const updatedUser = await findUserById(id);
+        const updatedUser = await findUserById(userId);
 
         res.status(200).json({ message: 'Profile details updated successfully', user: updatedUser });
     } catch (error) {
@@ -64,7 +64,7 @@ exports.updateProfileImage = [
             });
         }
 
-        updateProfileImage(req.query.id, req.file.cloudStoragePublicUrl);
+        updateProfileImage(req.query.userId, req.file.cloudStoragePublicUrl);
 
         // Return the public URL of the uploaded image
         res.status(200).json({
@@ -77,10 +77,10 @@ exports.updateProfileImage = [
 
 exports.deleteProfileImage = async (req, res, next) => {
     try {
-        const { id } = req.query; // User ID
+        const { userId } = req.query; // User ID
 
         // Check if the user exists
-        const user = await findUserById(id);
+        const user = await findUserById(userId);
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
@@ -92,14 +92,14 @@ exports.deleteProfileImage = async (req, res, next) => {
         }
 
         // Extract the GCS object name
-        const gcsname = `profile_images/${id}`;
+        const gcsname = `profile_images/${userId}`;
 
         // Delete the file from Google Cloud Storage
         const file = bucket.file(gcsname);
         await file.delete();
 
         // Update the user's profile image URL to null in the database
-        await updateProfileImage(id, null);
+        await updateProfileImage(userId, null);
 
         res.status(200).json({ message: 'Profile image deleted successfully' });
     } catch (error) {

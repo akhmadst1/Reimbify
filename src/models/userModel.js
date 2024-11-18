@@ -7,7 +7,7 @@ exports.createUser = async (email, passwordHashed, name, department, role = 'use
 
     // SQL query to insert the new user
     const query = `
-        INSERT INTO users (id, email, password_hashed, name, department, role)
+        INSERT INTO users (user_id, email, password_hashed, name, department, role)
         VALUES (?, ?, ?, ?, ?, ?)
     `;
 
@@ -33,82 +33,82 @@ exports.findUserByEmail = async (email) => {
 };
 
 // Find a user by ID
-exports.findUserById = async (id) => {
+exports.findUserById = async (userId) => {
     const query = `
-        SELECT * FROM users WHERE id = ?
+        SELECT * FROM users WHERE user_id = ?
     `;
-    const [rows] = await pool.query(query, [id]);
+    const [rows] = await pool.query(query, [userId]);
     return rows[0];
 };
 
 // Update the OTP code and expiry time for a user
-exports.updateOtp = async (id, otp, otpExpiresAt) => {
+exports.updateOtp = async (userId, otp, otpExpiresAt) => {
     const query = `
         UPDATE users 
         SET otp_code = ?, otp_expires_at = ? 
-        WHERE id = ?
+        WHERE user_id = ?
     `;
-    await pool.query(query, [otp, otpExpiresAt, id]);
+    await pool.query(query, [otp, otpExpiresAt, userId]);
 };
 
 // Verify the OTP code for a user
-exports.verifyOtp = async (id, otp) => {
+exports.verifyOtp = async (userId, otp) => {
     const query = `
         SELECT * FROM users 
-        WHERE id = ? AND otp_code = ? AND otp_expires_at > NOW()
+        WHERE user_id = ? AND otp_code = ? AND otp_expires_at > NOW()
     `;
-    const [rows] = await pool.query(query, [id, otp]);
+    const [rows] = await pool.query(query, [userId, otp]);
     return rows.length > 0;
 };
 
 // Update the password for a user
-exports.updatePassword = async (id, passwordHashed) => {
+exports.updatePassword = async (userId, passwordHashed) => {
     const query = `
         UPDATE users 
         SET password_hashed = ? 
-        WHERE id = ?
+        WHERE user_id = ?
     `;
-    await pool.query(query, [passwordHashed, id]);
+    await pool.query(query, [passwordHashed, userId]);
 };
 
 // Update user name
-exports.updateName = async (id, name) => {
+exports.updateName = async (userId, name) => {
     const query = `
         UPDATE users 
         SET name = ? 
-        WHERE id = ?
+        WHERE user_id = ?
     `;
-    await pool.query(query, [name, id]);
+    await pool.query(query, [name, userId]);
 };
 
 // Update user department
-exports.updateDepartment = async (id, department) => {
+exports.updateDepartment = async (userId, department) => {
     const query = `
         UPDATE users 
         SET department = ? 
-        WHERE id = ?
+        WHERE user_id = ?
     `;
-    await pool.query(query, [department, id]);
+    await pool.query(query, [department, userId]);
 };
 
 // Update user role
-exports.updateRole = async (id, role) => {
+exports.updateRole = async (userId, role) => {
     const query = `
         UPDATE users 
         SET role = ? 
-        WHERE id = ?
+        WHERE user_id = ?
     `;
-    await pool.query(query, [role, id]);
+    await pool.query(query, [role, userId]);
 };
 
 // Update user profile
-exports.updateProfileImage = async (id, profileImageUrl) => {
+exports.updateProfileImage = async (userId, profileImageUrl) => {
     const query = `
         UPDATE users 
         SET profile_image_url = ? 
-        WHERE id = ?
+        WHERE user_id = ?
     `;
-    await pool.query(query, [profileImageUrl, id]);
+    await pool.query(query, [profileImageUrl, userId]);
 };
 
 // Fetch all users from the database
@@ -121,13 +121,13 @@ exports.getAllUsers = async () => {
     return rows;
 };
 
-// Delete a user by id
-exports.deleteUserById = async (id) => {
+// Delete a user by userId
+exports.deleteUserById = async (userId) => {
     const query = `
         DELETE FROM users 
-        WHERE id = ?
+        WHERE user_id = ?
     `;
-    await pool.query(query, [id]);
+    await pool.query(query, [userId]);
 };
 
 // Delete a user by email

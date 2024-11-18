@@ -15,11 +15,11 @@ exports.createBankAccount = async (accountTitle, accountHolderName, accountNumbe
 };
 
 // Find a bank account by ID
-exports.findBankAccountById = async (id) => {
+exports.findBankAccountById = async (accountId) => {
     const query = `
-        SELECT * FROM bank_account WHERE id = ?
+        SELECT * FROM bank_account WHERE account_id = ?
     `;
-    const [rows] = await pool.query(query, [id]);
+    const [rows] = await pool.query(query, [accountId]);
     return rows[0];
 };
 
@@ -33,21 +33,21 @@ exports.findBankAccountsByUserId = async (userId) => {
 };
 
 // Update a bank account
-exports.updateBankAccount = async (id, accountTitle, accountHolderName, accountNumber, bankName) => {
+exports.updateBankAccount = async (accountId, accountTitle, accountHolderName, accountNumber, bankName) => {
     const query = `
         UPDATE bank_account
         SET account_title = ?, account_holder_name = ?, account_number = ?, bank_name = ?
-        WHERE id = ?
+        WHERE account_id = ?
     `;
-    await pool.query(query, [accountTitle, accountHolderName, accountNumber, bankName, id]);
+    await pool.query(query, [accountTitle, accountHolderName, accountNumber, bankName, accountId]);
 };
 
 // Delete a bank account by ID
-exports.deleteBankAccountById = async (id) => {
+exports.deleteBankAccountById = async (accountId) => {
     const query = `
-        DELETE FROM bank_account WHERE id = ?
+        DELETE FROM bank_account WHERE account_id = ?
     `;
-    await pool.query(query, [id]);
+    await pool.query(query, [accountId]);
 };
 
 // Delete bank accounts by user ID

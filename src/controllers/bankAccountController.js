@@ -23,11 +23,11 @@ exports.createBankAccount = async (req, res, next) => {
 // Get a bank account by ID or account number, or all accounts by userId
 exports.getBankAccounts = async (req, res, next) => {
     try {
-        const { id, userId } = req.query;
+        const { accountId, userId } = req.query;
 
-        if (id) {
+        if (accountId) {
             // Fetch account by ID
-            const account = await findBankAccountById(id);
+            const account = await findBankAccountById(accountId);
             if (!account) {
                 return res.status(404).json({ message: 'Bank account not found.' });
             }
@@ -53,15 +53,15 @@ exports.getBankAccounts = async (req, res, next) => {
 // Update a bank account
 exports.updateBankAccount = async (req, res, next) => {
     try {
-        const { id } = req.query;
+        const { accountId } = req.query;
         
-        if (!id) {
+        if (!accountId) {
             return res.status(400).json({ message: 'Account ID is required for update.' });
         }
 
         const { accountTitle, accountHolderName, accountNumber, bankName } = req.body;
 
-        await updateBankAccount(id, accountTitle, accountHolderName, accountNumber, bankName);
+        await updateBankAccount(accountId, accountTitle, accountHolderName, accountNumber, bankName);
 
         res.status(200).json({ message: 'Bank account updated successfully.' });
     } catch (error) {
@@ -72,11 +72,11 @@ exports.updateBankAccount = async (req, res, next) => {
 // Delete a bank account by ID or all accounts by userId
 exports.deleteBankAccounts = async (req, res, next) => {
     try {
-        const { id, userId } = req.query;
+        const { accountId, userId } = req.query;
 
-        if (id) {
+        if (accountId) {
             // Delete account by ID
-            await deleteBankAccountById(id);
+            await deleteBankAccountById(accountId);
             return res.status(200).json({ message: 'Bank account deleted successfully.' });
         }
 

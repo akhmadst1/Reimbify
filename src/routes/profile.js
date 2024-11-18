@@ -8,8 +8,8 @@ const {
 const { verifyToken } = require('../middlewares/authMiddleware');
 const router = express.Router();
 
-router.put('/update-profile-details', verifyToken, updateProfileDetails);
-router.put('/update-profile-image', verifyToken, updateProfileImage);
-router.delete('/delete-profile-image', verifyToken, deleteProfileImage);
+router.put('/details/update', verifyToken, updateProfileDetails);
+router.put('/image/update', verifyToken, updateProfileImage);
+router.delete('/image/delete', verifyToken, deleteProfileImage);
 
 module.exports = router;

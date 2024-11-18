@@ -18,11 +18,11 @@ const router = express.Router();
 router.post('/register', register);
 router.get('/activate', activateAccount);
 router.post('/login', login);
-router.post('/verify-otp', verifyOtp);
-router.post('/resend-otp', resendOtp);
-router.post('/forgot-password', forgotPassword);
-router.post('/reset-password', resetPassword);
-router.post('/change-password', verifyToken, changePassword);
+router.post('/otp/verify', verifyOtp);
+router.post('/otp/resend', resendOtp);
+router.post('/password/forgot', forgotPassword);
+router.post('/password/reset', resetPassword);
+router.post('/password/update', verifyToken, changePassword);
 router.get('/users', verifyToken, getUsers);
 router.post('/delete', verifyToken, deleteUser);
 
