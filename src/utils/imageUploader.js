@@ -22,9 +22,9 @@ let ImgUpload = {}
 ImgUpload.uploadToGcsProfileImages = (req, res, next) => {
     if (!req.file) return next()
 
-    const { id } = req.query;
+    const { userId } = req.query;
 
-    const gcsname = 'profile_images/' + id
+    const gcsname = 'profile_images/' + userId
     const file = bucket.file(gcsname)
 
     const stream = file.createWriteStream({
@@ -50,9 +50,9 @@ ImgUpload.uploadToGcsProfileImages = (req, res, next) => {
 ImgUpload.uploadToGcsReceipts = (req, res, next) => {
     if (!req.file) return next()
 
-    const { id } = req.query;
+    const { userId } = req.query;
 
-    const gcsname = 'receipts/' + id + '/' + req.file.originalname;
+    const gcsname = 'receipts/' + userId + '/' + req.file.originalname;
     const file = bucket.file(gcsname)
 
     const stream = file.createWriteStream({

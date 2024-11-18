@@ -52,10 +52,36 @@ exports.updateProfileDetails = async (req, res, next) => {
 exports.updateProfileImage = [
     // Middleware to handle the file upload
     multer.single('profileImage'),
+    
+    // Middleware to validate user ID and file upload
+    async (req, res, next) => {
+        const { userId } = req.query;
+
+        // Validate user ID
+        if (!userId) {
+            return res.status(400).json({ message: 'User ID is required' });
+        }
+
+        try {
+            // Check if the user exists
+            const user = await findUserById(userId);
+            if (!user) {
+                return res.status(404).json({ message: 'User not found' });
+            }
+
+            // Proceed to next middleware
+            next();
+        } catch (error) {
+            console.error('Error finding user:', error);
+            res.status(500).json({ message: 'Internal server error' });
+        }
+    },
+
     // Middleware to upload the file to Google Cloud Storage
     ImgUpload.uploadToGcsProfileImages,
-    // Final middleware to send the response
-    (req, res) => {
+
+    // Final middleware to update the profile and send the response
+    async (req, res) => {
         if (!req.file || req.file.cloudStorageError) {
             return res.status(400).json({
                 success: false,
@@ -64,14 +90,22 @@ exports.updateProfileImage = [
             });
         }
 
-        updateProfileImage(req.query.userId, req.file.cloudStoragePublicUrl);
+        const { userId } = req.query;
 
-        // Return the public URL of the uploaded image
-        res.status(200).json({
-            success: true,
-            message: 'Profile image uploaded successfully',
-            imageUrl: req.file.cloudStoragePublicUrl
-        });
+        try {
+            // Update profile image in the database
+            await updateProfileImage(userId, req.file.cloudStoragePublicUrl);
+
+            // Return the public URL of the uploaded image
+            res.status(200).json({
+                success: true,
+                message: 'Profile image uploaded successfully',
+                imageUrl: req.file.cloudStoragePublicUrl
+            });
+        } catch (error) {
+            console.error('Error updating profile image:', error);
+            res.status(500).json({ message: 'Internal server error' });
+        }
     }
 ];
 
