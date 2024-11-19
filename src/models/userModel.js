@@ -29,6 +29,7 @@ exports.findUserByEmail = async (email) => {
             user.user_id,
             user.email,
             user.name,
+            department.department_id,
             department.department_name,
             user.role,
             user.profile_image_url
@@ -40,7 +41,20 @@ exports.findUserByEmail = async (email) => {
             user.email = ?
     `;
     const [rows] = await pool.query(query, [email]);
-    return rows[0];
+    if (rows.length === 0) return null;
+
+    const user = rows[0];
+    return {
+        user_id: user.user_id,
+        email: user.email,
+        name: user.name,
+        department: {
+            department_id: user.department_id,
+            department_name: user.department_name
+        },
+        role: user.role,
+        profile_image_url: user.profile_image_url
+    };
 };
 
 exports.findUserById = async (userId) => {
@@ -49,6 +63,7 @@ exports.findUserById = async (userId) => {
             user.user_id,
             user.email,
             user.name,
+            department.department_id,
             department.department_name,
             user.role,
             user.profile_image_url
@@ -60,7 +75,50 @@ exports.findUserById = async (userId) => {
             user.user_id = ?
     `;
     const [rows] = await pool.query(query, [userId]);
-    return rows[0];
+    if (rows.length === 0) return null;
+
+    const user = rows[0];
+    return {
+        user_id: user.user_id,
+        email: user.email,
+        name: user.name,
+        department: {
+            department_id: user.department_id,
+            department_name: user.department_name
+        },
+        role: user.role,
+        profile_image_url: user.profile_image_url
+    };
+};
+
+exports.getAllUsers = async () => {
+    const query = `
+        SELECT 
+            user.user_id,
+            user.email,
+            user.name,
+            department.department_id,
+            department.department_name,
+            user.role,
+            user.profile_image_url
+        FROM 
+            user
+        JOIN 
+            department ON user.department_id = department.department_id
+    `;
+    const [rows] = await pool.query(query);
+
+    return rows.map(user => ({
+        user_id: user.user_id,
+        email: user.email,
+        name: user.name,
+        department: {
+            department_id: user.department_id,
+            department_name: user.department_name
+        },
+        role: user.role,
+        profile_image_url: user.profile_image_url
+    }));
 };
 
 // Update the OTP code and expiry time for a user
@@ -131,24 +189,6 @@ exports.updateProfileImage = async (userId, profileImageUrl) => {
         WHERE user_id = ?
     `;
     await pool.query(query, [profileImageUrl, userId]);
-};
-
-exports.getAllUsers = async () => {
-    const query = `
-        SELECT 
-            user.user_id,
-            user.email,
-            user.name,
-            department.department_name,
-            user.role,
-            user.profile_image_url
-        FROM 
-            user
-        JOIN 
-            department ON user.department_id = department.department_id
-    `;
-    const [rows] = await pool.query(query);
-    return rows;
 };
 
 // Delete a user by userId
