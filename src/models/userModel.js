@@ -23,19 +23,41 @@ exports.createUser = async (email, passwordHashed, name, departmentId, role = 'u
     }
 };
 
-// Find a user by email
 exports.findUserByEmail = async (email) => {
     const query = `
-        SELECT * FROM user WHERE email = ?
+        SELECT 
+            user.user_id,
+            user.email,
+            user.name,
+            department.department_name,
+            user.role,
+            user.profile_image_url
+        FROM 
+            user
+        JOIN 
+            department ON user.department_id = department.department_id
+        WHERE 
+            user.email = ?
     `;
     const [rows] = await pool.query(query, [email]);
     return rows[0];
 };
 
-// Find a user by ID
 exports.findUserById = async (userId) => {
     const query = `
-        SELECT * FROM user WHERE user_id = ?
+        SELECT 
+            user.user_id,
+            user.email,
+            user.name,
+            department.department_name,
+            user.role,
+            user.profile_image_url
+        FROM 
+            user
+        JOIN 
+            department ON user.department_id = department.department_id
+        WHERE 
+            user.user_id = ?
     `;
     const [rows] = await pool.query(query, [userId]);
     return rows[0];
@@ -111,11 +133,19 @@ exports.updateProfileImage = async (userId, profileImageUrl) => {
     await pool.query(query, [profileImageUrl, userId]);
 };
 
-// Fetch all user from the database
 exports.getAllUsers = async () => {
     const query = `
-    SELECT *
-    FROM user
+        SELECT 
+            user.user_id,
+            user.email,
+            user.name,
+            department.department_name,
+            user.role,
+            user.profile_image_url
+        FROM 
+            user
+        JOIN 
+            department ON user.department_id = department.department_id
     `;
     const [rows] = await pool.query(query);
     return rows;
