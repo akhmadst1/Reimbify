@@ -3,7 +3,7 @@ const pool = require('../config/pool'); // Import Cloud SQL connection pool
 // Create a new bank account
 exports.createBankAccount = async (accountTitle, accountHolderName, accountNumber, bankName, userId) => {
     const query = `
-        INSERT INTO bank_account (account_title, account_holder_name, account_number, bank_name, user_id)
+        INSERT INTO bank_account (account_title, account_holder_name, account_number_encrypted, bank_name, user_id)
         VALUES (?, ?, ?, ?, ?)
     `;
 
@@ -45,7 +45,7 @@ exports.findBankAccountsByUserId = async (userId) => {
 exports.updateBankAccount = async (accountId, accountTitle, accountHolderName, accountNumber, bankName) => {
     const query = `
         UPDATE bank_account
-        SET account_title = ?, account_holder_name = ?, account_number = ?, bank_name = ?
+        SET account_title = ?, account_holder_name = ?, account_number_encrypted = ?, bank_name = ?
         WHERE account_id = ?
     `;
     await pool.query(query, [accountTitle, accountHolderName, accountNumber, bankName, accountId]);

@@ -41,7 +41,7 @@ exports.getBankAccounts = async (req, res, next) => {
                 return res.status(404).json({ message: 'Bank account not found.' });
             }
             
-            account.account_number = decrypt(account.account_number);
+            account.account_number_encrypted = decrypt(account.account_number_encrypted);
             return res.status(200).json({ account });
         }
         
@@ -58,7 +58,7 @@ exports.getBankAccounts = async (req, res, next) => {
             }
 
             accounts.forEach(account => {
-                account.account_number = decrypt(account.account_number);
+                account.account_number_encrypted = decrypt(account.account_number_encrypted);
             });
 
             return res.status(200).json({ accounts });
@@ -70,7 +70,7 @@ exports.getBankAccounts = async (req, res, next) => {
         }
 
         accounts.forEach(account => {
-            account.account_number = decrypt(account.account_number);
+            account.account_number_encrypted = decrypt(account.account_number_encrypted);
         });
 
         return res.status(200).json({ accounts });
@@ -102,7 +102,7 @@ exports.updateBankAccount = async (req, res, next) => {
         }
 
         // Encrypt the account number if it's provided
-        let encryptedAccountNumber = account.account_number;
+        let encryptedAccountNumber = account.account_number_encrypted;
         if (accountNumber) {
             encryptedAccountNumber = encrypt(accountNumber);
         }
