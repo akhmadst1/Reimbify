@@ -1,14 +1,14 @@
 const pool = require('../config/pool'); // Import Cloud SQL connection pool
 
 // Create a new bank account
-exports.createBankAccount = async (accountTitle, accountHolderName, accountNumber, bankName, userId) => {
+exports.createBankAccount = async (accountTitle, accountHolderName, accountNumber, bankId, userId) => {
     const query = `
-        INSERT INTO bank_account (account_title, account_holder_name, account_number_encrypted, bank_name, user_id)
+        INSERT INTO bank_account (account_title, account_holder_name, account_number_encrypted, bank_id, user_id)
         VALUES (?, ?, ?, ?, ?)
     `;
 
     try {
-        await pool.query(query, [accountTitle, accountHolderName, accountNumber, bankName, userId]);
+        await pool.query(query, [accountTitle, accountHolderName, accountNumber, bankId, userId]);
     } catch (err) {
         throw err; // Handle or log errors appropriately
     }
@@ -42,13 +42,13 @@ exports.findBankAccountsByUserId = async (userId) => {
 };
 
 // Update a bank account
-exports.updateBankAccount = async (accountId, accountTitle, accountHolderName, accountNumber, bankName) => {
+exports.updateBankAccount = async (accountId, accountTitle, accountHolderName, accountNumber, bankId) => {
     const query = `
         UPDATE bank_account
-        SET account_title = ?, account_holder_name = ?, account_number_encrypted = ?, bank_name = ?
+        SET account_title = ?, account_holder_name = ?, account_number_encrypted = ?, bank_id = ?
         WHERE account_id = ?
     `;
-    await pool.query(query, [accountTitle, accountHolderName, accountNumber, bankName, accountId]);
+    await pool.query(query, [accountTitle, accountHolderName, accountNumber, bankId, accountId]);
 };
 
 // Delete a bank account by ID

@@ -1,23 +1,23 @@
 const pool = require('../config/pool'); // Import Cloud SQL connection pool
 
 // Create a new user in the database
-exports.createUser = async (email, passwordHashed, name, department, role = 'user') => {
+exports.createUser = async (email, passwordHashed, name, departmentId, role = 'user') => {
     // Generate a random 6-digit ID
     const randomId = Math.floor(100000 + Math.random() * 900000);
 
     // SQL query to insert the new user
     const query = `
-        INSERT INTO user (user_id, email, password_hashed, name, department, role)
+        INSERT INTO user (user_id, email, password_hashed, name, department_id, role)
         VALUES (?, ?, ?, ?, ?, ?)
     `;
 
     try {
-        await pool.query(query, [randomId, email, passwordHashed, name, department, role]);
+        await pool.query(query, [randomId, email, passwordHashed, name, departmentId, role]);
     } catch (err) {
         if (err.code === 'ER_DUP_ENTRY') {
             // Handle duplicate ID collision by retrying with a new ID
             console.error('Duplicate ID detected. Retrying...');
-            return await exports.createUser(email, passwordHashed, name, department, role); // Recursive retry
+            return await exports.createUser(email, passwordHashed, name, departmentId, role); // Recursive retry
         }
         throw err; // Rethrow any other errors
     }
@@ -82,13 +82,13 @@ exports.updateName = async (userId, name) => {
 };
 
 // Update user department
-exports.updateDepartment = async (userId, department) => {
+exports.updateDepartment = async (userId, departmentId) => {
     const query = `
         UPDATE user 
-        SET department = ? 
+        SET department_id = ? 
         WHERE user_id = ?
     `;
-    await pool.query(query, [department, userId]);
+    await pool.query(query, [departmentId, userId]);
 };
 
 // Update user role
