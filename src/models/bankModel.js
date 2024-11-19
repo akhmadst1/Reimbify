@@ -20,7 +20,12 @@ exports.getAllBanks = async () => {
         SELECT * FROM bank
     `;
     const [rows] = await pool.query(query);
-    return rows; // Return the banks array
+
+    // Map results to camelCase
+    return rows.map(bank => ({
+        bankId: bank.bank_id,
+        bankName: bank.bank_name,
+    }));
 };
 
 // Get bank by ID
@@ -29,7 +34,13 @@ exports.getBankById = async (bankId) => {
         SELECT * FROM bank WHERE bank_id = ?
     `;
     const [rows] = await pool.query(query, [bankId]);
-    return rows[0]; // Return the bank object if found
+    if (rows.length === 0) return null;
+
+    const bank = rows[0];
+    return {
+        bankId: bank.bank_id,
+        bankName: bank.bank_name,
+    };
 };
 
 // Update bank name by ID

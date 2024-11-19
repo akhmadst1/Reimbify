@@ -14,13 +14,18 @@ exports.createDepartment = async (departmentName) => {
     }
 };
 
-// Get all department
+// Get all departments
 exports.getAllDepartments = async () => {
     const query = `
         SELECT * FROM department
     `;
     const [rows] = await pool.query(query);
-    return rows; // Return the departments array
+
+    // Map results to camelCase
+    return rows.map(department => ({
+        departmentId: department.department_id,
+        departmentName: department.department_name,
+    }));
 };
 
 // Get department by ID
@@ -29,7 +34,13 @@ exports.getDepartmentById = async (departmentId) => {
         SELECT * FROM department WHERE department_id = ?
     `;
     const [rows] = await pool.query(query, [departmentId]);
-    return rows[0]; // Return the department object if found
+    if (rows.length === 0) return null;
+
+    const department = rows[0];
+    return {
+        departmentId: department.department_id,
+        departmentName: department.department_name,
+    };
 };
 
 // Update department name by ID

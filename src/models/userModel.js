@@ -1,7 +1,7 @@
 const pool = require('../config/pool'); // Import Cloud SQL connection pool
 
 // Create a new user in the database
-exports.createUser = async (email, passwordHashed, name, departmentId, role = 'user') => {
+exports.createUser = async (email, passwordHashed, userName, departmentId, role = 'user') => {
     // Generate a random 6-digit ID
     const randomId = Math.floor(100000 + Math.random() * 900000);
 
@@ -12,16 +12,43 @@ exports.createUser = async (email, passwordHashed, name, departmentId, role = 'u
     `;
 
     try {
-        await pool.query(query, [randomId, email, passwordHashed, name, departmentId, role]);
+        await pool.query(query, [randomId, email, passwordHashed, userName, departmentId, role]);
     } catch (err) {
         if (err.code === 'ER_DUP_ENTRY') {
             // Handle duplicate ID collision by retrying with a new ID
             console.error('Duplicate ID detected. Retrying...');
-            return await exports.createUser(email, passwordHashed, name, departmentId, role); // Recursive retry
+            return await exports.createUser(email, passwordHashed, userName, departmentId, role); // Recursive retry
         }
         throw err; // Rethrow any other errors
     }
 };
+
+exports.getHashedPassword = async (userId) => {
+    const query = `
+        SELECT
+            password_hashed 
+        FROM 
+            user 
+        WHERE 
+            user_id = ?
+    `;
+    const [rows] = await pool.query(query, [userId]);
+    return rows[0].password_hashed;
+};
+
+function formatUser(user) {
+    return {
+        userId: user.user_id,
+        email: user.email,
+        userName: user.user_name,
+        department: {
+            department_id: user.department_id,
+            department_name: user.department_name
+        },
+        role: user.role,
+        profileImageUrl: user.profile_image_url
+    };
+}
 
 exports.findUserByEmail = async (email) => {
     const query = `
@@ -41,20 +68,7 @@ exports.findUserByEmail = async (email) => {
             user.email = ?
     `;
     const [rows] = await pool.query(query, [email]);
-    if (rows.length === 0) return null;
-
-    const user = rows[0];
-    return {
-        user_id: user.user_id,
-        email: user.email,
-        name: user.user_name,
-        department: {
-            department_id: user.department_id,
-            department_name: user.department_name
-        },
-        role: user.role,
-        profile_image_url: user.profile_image_url
-    };
+    return rows.length ? formatUser(rows[0]) : null;
 };
 
 exports.findUserById = async (userId) => {
@@ -75,20 +89,30 @@ exports.findUserById = async (userId) => {
             user.user_id = ?
     `;
     const [rows] = await pool.query(query, [userId]);
-    if (rows.length === 0) return null;
+    return rows.length ? formatUser(rows[0]) : null;
+};
 
-    const user = rows[0];
-    return {
-        user_id: user.user_id,
-        email: user.email,
-        name: user.user_name,
-        department: {
-            department_id: user.department_id,
-            department_name: user.department_name
-        },
-        role: user.role,
-        profile_image_url: user.profile_image_url
-    };
+exports.getUsersByDepartmentId = async (departmentId) => {
+    const query = `
+        SELECT 
+            user.user_id,
+            user.email,
+            user.user_name,
+            department.department_id,
+            department.department_name,
+            user.role,
+            user.profile_image_url
+        FROM 
+            user
+        JOIN 
+            department ON user.department_id = department.department_id
+        WHERE 
+            department.department_id = ?
+    `;
+    
+    const [rows] = await pool.query(query, [departmentId]);
+    
+    return rows.map(formatUser);
 };
 
 exports.getAllUsers = async () => {
@@ -107,18 +131,7 @@ exports.getAllUsers = async () => {
             department ON user.department_id = department.department_id
     `;
     const [rows] = await pool.query(query);
-
-    return rows.map(user => ({
-        user_id: user.user_id,
-        email: user.email,
-        name: user.user_name,
-        department: {
-            department_id: user.department_id,
-            department_name: user.department_name
-        },
-        role: user.role,
-        profile_image_url: user.profile_image_url
-    }));
+    return rows.map(formatUser);
 };
 
 // Update the OTP code and expiry time for a user
@@ -155,7 +168,7 @@ exports.updatePassword = async (userId, passwordHashed) => {
 exports.updateName = async (userId, name) => {
     const query = `
         UPDATE user 
-        SET name = ? 
+        SET user_name = ? 
         WHERE user_id = ?
     `;
     await pool.query(query, [name, userId]);

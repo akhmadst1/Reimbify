@@ -4,10 +4,12 @@ const {
     updateOtp,
     updatePassword,
     getAllUsers,
+    getUsersByDepartmentId,
     findUserByEmail,
     findUserById,
     deleteUserById,
     deleteUserByEmail,
+    getHashedPassword
 } = require('../models/userModel');
 const { sendActivationEmail, sendOtpEmail } = require('../utils/emailService');
 const { generateOtp } = require('../utils/otpUtil');
@@ -21,7 +23,7 @@ const generateAccessToken = (userId) => jwt.sign({ userId }, process.env.JWT_SEC
 // Register
 exports.register = async (req, res, next) => {
     try {
-        const { email, password, name, department, role } = req.body;
+        const { email, password, userName, departmentId, role } = req.body;
 
         const defaultRole = role || 'user'; // Default role is 'user'
 
@@ -36,7 +38,7 @@ exports.register = async (req, res, next) => {
 
         // Generate activation token
         const activationToken = jwt.sign(
-            { email, hashedPassword, name, department, defaultRole },
+            { email, hashedPassword, userName, departmentId, defaultRole },
             process.env.JWT_SECRET,
             { expiresIn: '24h' } // Token valid for 24 hours
         );
@@ -60,7 +62,7 @@ exports.activateAccount = async (req, res, next) => {
         // Verify and decode the JWT
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-        const { email, hashedPassword, name, department, defaultRole } = decoded;
+        const { email, hashedPassword, userName, departmentId, defaultRole } = decoded;
 
         // Check if the user already exists (just in case)
         const existingUser = await findUserByEmail(email);
@@ -69,7 +71,7 @@ exports.activateAccount = async (req, res, next) => {
         }
 
         // Create the user in the database
-        await createUser(email, hashedPassword, name, department, defaultRole);
+        await createUser(email, hashedPassword, userName, departmentId, defaultRole);
 
         res.status(201).json({ message: 'Account activated successfully.' });
     } catch (error) {
@@ -88,7 +90,9 @@ exports.login = async (req, res, next) => {
 
         if (!user) return res.status(404).json({ message: 'User not found' });
 
-        const isPasswordValid = await bcrypt.compare(password, user.password_hashed);
+        const userPassword = await getHashedPassword(user.user_id);
+
+        const isPasswordValid = await bcrypt.compare(password, userPassword);
         if (!isPasswordValid) return res.status(400).json({ message: 'Invalid password' });
 
         // Generate and send OTP for verification
@@ -189,7 +193,9 @@ exports.changePassword = async (req, res, next) => {
         const user = await findUserById(userId);
         if (!user) return res.status(404).json({ message: 'User not found' });
 
-        const isPasswordValid = await bcrypt.compare(oldPassword, user.password_hashed);
+        const userPassword = await getHashedPassword(user.user_id);
+
+        const isPasswordValid = await bcrypt.compare(oldPassword, userPassword);
         if (!isPasswordValid) return res.status(400).json({ message: 'Invalid current password' });
 
         const hashedPassword = await bcrypt.hash(newPassword, 10);
@@ -204,9 +210,9 @@ exports.changePassword = async (req, res, next) => {
 // Get Users (all or by ID/email)
 exports.getUsers = async (req, res, next) => {
     try {
-        const { email, userId } = req.query;
+        const { email, userId, departmentId } = req.query;
 
-        // Handle case: Get user by ID
+        // Get user by ID
         if (userId) {
             const user = await findUserById(userId);
             if (!user) {
@@ -215,7 +221,7 @@ exports.getUsers = async (req, res, next) => {
             return res.status(200).json({ user });
         }
 
-        // Handle case: Get user by email
+        // Get user by email
         if (email) {
             const user = await findUserByEmail(email);
             if (!user) {
@@ -224,7 +230,16 @@ exports.getUsers = async (req, res, next) => {
             return res.status(200).json({ user });
         }
 
-        // Handle case: No query params, return all users
+        // Get users by department ID
+        if (departmentId) {
+            const users = await getUsersByDepartmentId(departmentId);
+            if (users.length === 0) {
+                return res.status(404).json({ message: 'No users found for this department' });
+            }
+            return res.status(200).json({ users });
+        }
+
+        // Get all users if no query parameters provided
         const users = await getAllUsers();
         if (users.length === 0) {
             return res.status(404).json({ message: 'No users found' });

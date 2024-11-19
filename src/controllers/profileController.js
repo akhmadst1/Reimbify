@@ -120,7 +120,7 @@ exports.deleteProfileImage = async (req, res, next) => {
         }
 
         // Get the profile image URL
-        const profileImageUrl = user.profile_image_url;
+        const profileImageUrl = user.profileImageUrl;
         if (!profileImageUrl) {
             return res.status(400).json({ message: 'No profile image to delete' });
         }

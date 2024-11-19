@@ -1,54 +1,106 @@
 const pool = require('../config/pool'); // Import Cloud SQL connection pool
 
 // Create a new bank account
-exports.createBankAccount = async (accountTitle, accountHolderName, accountNumber, bankId, userId) => {
+exports.createBankAccount = async (accountTitle, accountHolderName, encryptedAccountNumber, bankId, userId) => {
     const query = `
         INSERT INTO bank_account (account_title, account_holder_name, account_number_encrypted, bank_id, user_id)
         VALUES (?, ?, ?, ?, ?)
     `;
 
     try {
-        await pool.query(query, [accountTitle, accountHolderName, accountNumber, bankId, userId]);
+        await pool.query(query, [accountTitle, accountHolderName, encryptedAccountNumber, bankId, userId]);
     } catch (err) {
         throw err; // Handle or log errors appropriately
     }
 };
 
-// Find all bank accounts
+function formatBankAccount(row) {
+    return {
+        accountId: row.account_id,
+        accountTitle: row.account_title,
+        accountHolderName: row.account_holder_name,
+        accountNumber: row.account_number_encrypted,
+        user: {
+            userId: row.user_id,
+            userName: row.user_name,
+        },
+        bank: {
+            bankId: row.bank_id,
+            bankName: row.bank_name,
+        }
+    };
+}
+
+// Find all bank accounts with user and bank details
 exports.getAllBankAccounts = async () => {
     const query = `
-        SELECT * FROM bank_account
+        SELECT 
+            ba.account_id,
+            ba.account_title,
+            ba.account_holder_name,
+            ba.account_number_encrypted,
+            u.user_id,
+            u.user_name,
+            b.bank_id,
+            b.bank_name
+        FROM bank_account ba
+        JOIN user u ON ba.user_id = u.user_id
+        JOIN bank b ON ba.bank_id = b.bank_id
     `;
     const [rows] = await pool.query(query);
-    return rows;
+    return rows.map(formatBankAccount);
 };
 
-// Find a bank account by ID
+// Find a bank account by ID with user and bank details
 exports.findBankAccountById = async (accountId) => {
     const query = `
-        SELECT * FROM bank_account WHERE account_id = ?
+        SELECT 
+            ba.account_id,
+            ba.account_title,
+            ba.account_holder_name,
+            ba.account_number_encrypted,
+            u.user_id,
+            u.user_name,
+            b.bank_id,
+            b.bank_name
+        FROM bank_account ba
+        JOIN user u ON ba.user_id = u.user_id
+        JOIN bank b ON ba.bank_id = b.bank_id
+        WHERE ba.account_id = ?
     `;
     const [rows] = await pool.query(query, [accountId]);
-    return rows[0];
+    return rows.length ? formatBankAccount(rows[0]) : null;
 };
 
-// Find all bank accounts for a specific user
+// Find all bank accounts for a specific user with bank details
 exports.findBankAccountsByUserId = async (userId) => {
     const query = `
-        SELECT * FROM bank_account WHERE user_id = ?
+        SELECT 
+            ba.account_id,
+            ba.account_title,
+            ba.account_holder_name,
+            ba.account_number_encrypted,
+            u.user_id,
+            u.user_name,
+            b.bank_id,
+            b.bank_name
+        FROM bank_account ba
+        JOIN user u ON ba.user_id = u.user_id
+        JOIN bank b ON ba.bank_id = b.bank_id
+        WHERE ba.user_id = ?
     `;
     const [rows] = await pool.query(query, [userId]);
-    return rows;
+    return rows.map(formatBankAccount);
 };
 
 // Update a bank account
-exports.updateBankAccount = async (accountId, accountTitle, accountHolderName, accountNumber, bankId) => {
+exports.updateBankAccount = async (accountId, accountTitle, accountHolderName, encryptedAccountNumber, bankId) => {
     const query = `
         UPDATE bank_account
         SET account_title = ?, account_holder_name = ?, account_number_encrypted = ?, bank_id = ?
         WHERE account_id = ?
     `;
-    await pool.query(query, [accountTitle, accountHolderName, accountNumber, bankId, accountId]);
+    await pool.query(query, [accountTitle, accountHolderName, encryptedAccountNumber, bankId, accountId]);
 };
 
 // Delete a bank account by ID

@@ -13,7 +13,7 @@ const { encrypt, decrypt } = require('../utils/encryption');
 // Create a new bank account
 exports.createBankAccount = async (req, res, next) => {
     try {
-        const { accountTitle, accountHolderName, accountNumber, bankName, userId } = req.body;
+        const { accountTitle, accountHolderName, accountNumber, bankId, userId } = req.body;
         
         // Validate user existence
         const user = await findUserById(userId);
@@ -23,7 +23,7 @@ exports.createBankAccount = async (req, res, next) => {
         
         const encryptedAccountNumber = encrypt(accountNumber);
         
-        await createBankAccount(accountTitle, accountHolderName, encryptedAccountNumber, bankName, userId);
+        await createBankAccount(accountTitle, accountHolderName, encryptedAccountNumber, bankId, userId);
         res.status(201).json({ message: 'Bank account created successfully.' });
     } catch (error) {
         next(error);
@@ -41,7 +41,7 @@ exports.getBankAccounts = async (req, res, next) => {
                 return res.status(404).json({ message: 'Bank account not found.' });
             }
             
-            account.account_number_encrypted = decrypt(account.account_number_encrypted);
+            account.accountNumber = decrypt(account.accountNumber);
             return res.status(200).json({ account });
         }
         
@@ -58,7 +58,7 @@ exports.getBankAccounts = async (req, res, next) => {
             }
 
             accounts.forEach(account => {
-                account.account_number_encrypted = decrypt(account.account_number_encrypted);
+                account.accountNumber = decrypt(account.accountNumber);
             });
 
             return res.status(200).json({ accounts });
@@ -70,7 +70,7 @@ exports.getBankAccounts = async (req, res, next) => {
         }
 
         accounts.forEach(account => {
-            account.account_number_encrypted = decrypt(account.account_number_encrypted);
+            account.accountNumber = decrypt(account.accountNumber);
         });
 
         return res.status(200).json({ accounts });
@@ -88,7 +88,7 @@ exports.updateBankAccount = async (req, res, next) => {
             return res.status(400).json({ message: 'Account ID is required for update.' });
         }
 
-        const { accountTitle, accountHolderName, accountNumber, bankName } = req.body;
+        const { accountTitle, accountHolderName, accountNumber, bankId } = req.body;
 
         const account = await findBankAccountById(accountId);
         if (!account) {
@@ -96,18 +96,18 @@ exports.updateBankAccount = async (req, res, next) => {
         }
 
         // Ensure the associated user exists
-        const user = await findUserById(account.user_id);
+        const user = await findUserById(account.user.userId);
         if (!user) {
             return res.status(404).json({ message: 'User not found. Cannot update bank account.' });
         }
 
         // Encrypt the account number if it's provided
-        let encryptedAccountNumber = account.account_number_encrypted;
+        let encryptedAccountNumber = account.accountNumber;
         if (accountNumber) {
             encryptedAccountNumber = encrypt(accountNumber);
         }
 
-        await updateBankAccount(accountId, accountTitle, accountHolderName, encryptedAccountNumber, bankName);
+        await updateBankAccount(accountId, accountTitle, accountHolderName, encryptedAccountNumber, bankId);
         res.status(200).json({ message: 'Bank account updated successfully.' });
     } catch (error) {
         next(error);
@@ -126,7 +126,7 @@ exports.deleteBankAccounts = async (req, res, next) => {
             }
 
             // Ensure the associated user exists
-            const user = await findUserById(account.user_id);
+            const user = await findUserById(account.user.userId);
             if (!user) {
                 return res.status(404).json({ message: 'User not found. Cannot delete bank account.' });
             }
