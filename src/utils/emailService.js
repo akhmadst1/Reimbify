@@ -15,7 +15,7 @@ exports.sendActivationEmail = async (email, activationLink) => {
         to: email,
         subject: 'Activate Your Account',
         text: `Click the link to activate your account: ${activationLink}`,
-        html: `<p>Click the link below to activate your account:</p>
+        html: `<p>Click this link to activate your account: ${activationLink} </p>
                <a href="${activationLink}">Activate Account</a>`,
     };
     await transporter.sendMail(mailOptions);
