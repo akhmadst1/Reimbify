@@ -16,7 +16,7 @@ const multer = Multer({
 exports.updateProfileDetails = async (req, res, next) => {
     try {
         const { userId } = req.query; // User ID
-        const { name, department, role } = req.body;
+        const { name, departmentId, role } = req.body;
 
         // Validate input
         if (!userId) {
@@ -33,8 +33,8 @@ exports.updateProfileDetails = async (req, res, next) => {
         if (name) {
             await updateName(userId, name);
         }
-        if (department) {
-            await updateDepartment(userId, department);
+        if (departmentId) {
+            await updateDepartment(userId, departmentId);
         }
         if (role) {
             await updateRole(userId, role);
