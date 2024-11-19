@@ -7,7 +7,7 @@ exports.createUser = async (email, passwordHashed, name, departmentId, role = 'u
 
     // SQL query to insert the new user
     const query = `
-        INSERT INTO user (user_id, email, password_hashed, name, department_id, role)
+        INSERT INTO user (user_id, email, password_hashed, user_name, department_id, role)
         VALUES (?, ?, ?, ?, ?, ?)
     `;
 
@@ -28,7 +28,7 @@ exports.findUserByEmail = async (email) => {
         SELECT 
             user.user_id,
             user.email,
-            user.name,
+            user.user_name,
             department.department_id,
             department.department_name,
             user.role,
@@ -47,7 +47,7 @@ exports.findUserByEmail = async (email) => {
     return {
         user_id: user.user_id,
         email: user.email,
-        name: user.name,
+        name: user.user_name,
         department: {
             department_id: user.department_id,
             department_name: user.department_name
@@ -62,7 +62,7 @@ exports.findUserById = async (userId) => {
         SELECT 
             user.user_id,
             user.email,
-            user.name,
+            user.user_name,
             department.department_id,
             department.department_name,
             user.role,
@@ -81,7 +81,7 @@ exports.findUserById = async (userId) => {
     return {
         user_id: user.user_id,
         email: user.email,
-        name: user.name,
+        name: user.user_name,
         department: {
             department_id: user.department_id,
             department_name: user.department_name
@@ -96,7 +96,7 @@ exports.getAllUsers = async () => {
         SELECT 
             user.user_id,
             user.email,
-            user.name,
+            user.user_name,
             department.department_id,
             department.department_name,
             user.role,
@@ -111,7 +111,7 @@ exports.getAllUsers = async () => {
     return rows.map(user => ({
         user_id: user.user_id,
         email: user.email,
-        name: user.name,
+        name: user.user_name,
         department: {
             department_id: user.department_id,
             department_name: user.department_name
