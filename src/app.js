@@ -7,6 +7,7 @@ const authRoutes = require('./routes/auth');
 const profileRoutes = require('./routes/profile');
 const bankAccountRoutes = require('./routes/bankAccount');
 const departmentRoutes = require('./routes/department');
+const bankRoutes = require('./routes/bank');
 
 const app = express();
 
@@ -20,6 +21,7 @@ app.use('/auth', authRoutes);
 app.use('/profile', profileRoutes);
 app.use('/bank-account', bankAccountRoutes);
 app.use('/department', departmentRoutes);
+app.use('/bank', bankRoutes);
 
 // Global Error Handler
 app.use((err, req, res, next) => {
