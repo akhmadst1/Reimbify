@@ -123,7 +123,7 @@ exports.login = async (req, res, next) => {
         // Generate short-lived access token
         const accessToken = generateAccessToken(user.userId);
 
-        res.status(200).json({ message: 'Login successful.', userId: user.userId, accessToken });
+        res.status(200).json({ message: 'Login successful.', userId: user.userId, role: user.role, accessToken });
     } catch (error) {
         next(error);
     }
@@ -133,6 +133,9 @@ exports.login = async (req, res, next) => {
 exports.verifyOtp = async (req, res, next) => {
     try {
         const { userId, otp } = req.body;
+        const user = await findUserById(userId);
+
+        if (!user) return res.status(404).json({ message: 'User not found' });
 
         const isValid = await verifyOtp(userId, otp);
 
@@ -144,7 +147,7 @@ exports.verifyOtp = async (req, res, next) => {
         // Generate short-lived access token
         const accessToken = generateAccessToken(userId);
 
-        res.status(200).json({ message: 'Login successful.', userId: userId, accessToken });
+        res.status(200).json({ message: 'Login successful.', userId: userId, role: user.role, accessToken });
     } catch (error) {
         next(error);
     }
@@ -192,6 +195,10 @@ exports.forgotPassword = async (req, res, next) => {
 exports.resetPassword = async (req, res, next) => {
     try {
         const { userId, otp, newPassword } = req.body;
+        const user = await findUserById(userId);
+
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
         const isValid = await verifyOtp(userId, otp);
 
         if (!isValid) return res.status(400).json({ message: 'Invalid or expired OTP' });
@@ -202,7 +209,7 @@ exports.resetPassword = async (req, res, next) => {
         // Immediately mark OTP as expired
         await updateOtp(userId, null, null);
 
-        res.status(200).json({ message: 'Password reset successfully.' });
+        res.status(200).json({ message: 'Password reset successfully.', userId: userId, email: user.email, role: user.role });
     } catch (error) {
         next(error);
     }
