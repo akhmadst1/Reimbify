@@ -90,7 +90,7 @@ exports.login = async (req, res, next) => {
 
         if (!user) return res.status(404).json({ message: 'User not found' });
 
-        const userPassword = await getHashedPassword(user.user_id);
+        const userPassword = await getHashedPassword(user.userId);
 
         const isPasswordValid = await bcrypt.compare(password, userPassword);
         if (!isPasswordValid) return res.status(400).json({ message: 'Invalid password' });
@@ -98,10 +98,10 @@ exports.login = async (req, res, next) => {
         // Generate and send OTP for verification
         const otp = generateOtp();
         const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000); // OTP valid for 5 minutes
-        await updateOtp(user.user_id, otp, otpExpiresAt);
+        await updateOtp(user.userId, otp, otpExpiresAt);
         await sendOtpEmail(email, otp);
 
-        res.status(200).json({ message: 'OTP sent to email. Verify to complete login.', userId: user.user_id, email });
+        res.status(200).json({ message: 'OTP sent to email. Verify to complete login.', userId: user.userId, email });
     } catch (error) {
         next(error);
     }
@@ -138,10 +138,10 @@ exports.resendOtp = async (req, res, next) => {
         const newOtp = generateOtp();
         const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
-        await updateOtp(user.user_id, newOtp, otpExpiresAt);
+        await updateOtp(user.userId, newOtp, otpExpiresAt);
         await sendOtpEmail(user.email, newOtp);
 
-        res.status(200).json({ message: 'OTP resent to email.', userId: user.user_id, email: user.email });
+        res.status(200).json({ message: 'OTP resent to email.', userId: user.userId, email: user.email });
     } catch (error) {
         next(error);
     }
@@ -157,10 +157,10 @@ exports.forgotPassword = async (req, res, next) => {
         const otp = generateOtp();
         const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
-        await updateOtp(user.user_id, otp, otpExpiresAt);
+        await updateOtp(user.userId, otp, otpExpiresAt);
         await sendOtpEmail(email, otp);
 
-        res.status(200).json({ message: 'OTP for reset password sent to email.', userId: user.user_id, email });
+        res.status(200).json({ message: 'OTP for reset password sent to email.', userId: user.userId, email });
     } catch (error) {
         next(error);
     }
@@ -193,7 +193,7 @@ exports.changePassword = async (req, res, next) => {
         const user = await findUserById(userId);
         if (!user) return res.status(404).json({ message: 'User not found' });
 
-        const userPassword = await getHashedPassword(user.user_id);
+        const userPassword = await getHashedPassword(user.userId);
 
         const isPasswordValid = await bcrypt.compare(oldPassword, userPassword);
         if (!isPasswordValid) return res.status(400).json({ message: 'Invalid current password' });
