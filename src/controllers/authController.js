@@ -82,8 +82,8 @@ exports.activateAccount = async (req, res, next) => {
     }
 };
 
-// Login
-exports.login = async (req, res, next) => {
+// Login with OTP
+exports.loginOTP = async (req, res, next) => {
     try {
         const { email, password } = req.body;
         const user = await findUserByEmail(email);
@@ -102,6 +102,28 @@ exports.login = async (req, res, next) => {
         await sendOtpEmail(email, otp);
 
         res.status(200).json({ message: 'OTP sent to email. Verify to complete login.', userId: user.userId, email });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Login without OTP
+exports.login = async (req, res, next) => {
+    try {
+        const { email, password } = req.body;
+        const user = await findUserByEmail(email);
+
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        const userPassword = await getHashedPassword(user.userId);
+
+        const isPasswordValid = await bcrypt.compare(password, userPassword);
+        if (!isPasswordValid) return res.status(400).json({ message: 'Invalid password' });
+
+        // Generate short-lived access token
+        const accessToken = generateAccessToken(user.userId);
+
+        res.status(200).json({ message: 'Login successful.', userId: user.userId, accessToken });
     } catch (error) {
         next(error);
     }
