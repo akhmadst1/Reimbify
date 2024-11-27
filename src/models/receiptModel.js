@@ -46,7 +46,19 @@ function formatReceipt(receipt) {
         amount: receipt.amount,
         requestDate: receipt.request_date,
         status: receipt.status,
-        receiptImageUrl: receipt.receipt_image_url
+        receiptImageUrl: receipt.receipt_image_url,
+        approval: {
+            admin: receipt.admin_id
+                ? {
+                    adminId: receipt.admin_id,
+                    adminName: receipt.admin_name,
+                    adminEmail: receipt.admin_email
+                }
+                : null,
+            responseDate: receipt.response_date,
+            transferImageUrl: receipt.transfer_image_url,
+            responseDescription: receipt.response_description
+        }
     };
 }
 
@@ -77,12 +89,15 @@ exports.getFilteredReceipts = async ({ userId, sorted, search, departmentId, sta
             u.user_id, u.user_name, u.email,
             d.department_id, d.department_name,
             ba.account_id, ba.account_title, ba.account_holder_name, ba.account_number_encrypted,
-            b.bank_id, b.bank_name
+            b.bank_id, b.bank_name,
+            admin.user_id AS admin_id, admin.user_name AS admin_name, admin.email AS admin_email,
+            r.response_date, r.transfer_image_url, r.response_description
         FROM receipt r
         JOIN user u ON r.requester_id = u.user_id
         JOIN department d ON r.department_id = d.department_id
         JOIN bank_account ba ON r.account_id = ba.account_id
         JOIN bank b ON ba.bank_id = b.bank_id
+        LEFT JOIN user admin ON r.admin_id = admin.user_id;
     `;
 
     // Add WHERE clause if there are any conditions
@@ -112,13 +127,16 @@ exports.getReceiptById = async (receiptId) => {
             u.user_id, u.user_name, u.email,
             d.department_id, d.department_name,
             ba.account_id, ba.account_title, ba.account_holder_name, ba.account_number_encrypted,
-            b.bank_id, b.bank_name
+            b.bank_id, b.bank_name,
+            admin.user_id AS admin_id, admin.user_name AS admin_name, admin.email AS admin_email,
+            r.response_date, r.transfer_image_url, r.response_description
         FROM receipt r
         JOIN user u ON r.requester_id = u.user_id
         JOIN department d ON r.department_id = d.department_id
         JOIN bank_account ba ON r.account_id = ba.account_id
         JOIN bank b ON ba.bank_id = b.bank_id
-        WHERE r.receipt_id = ?
+        LEFT JOIN user admin ON r.admin_id = admin.user_id
+        WHERE r.receipt_id = ?;
     `;
     const [rows] = await pool.query(query, [receiptId]);
     return rows.length ? formatReceipt(rows[0]) : null;
@@ -128,14 +146,14 @@ exports.getReceiptById = async (receiptId) => {
 exports.updateReceipt = async (receiptId, updatedData) => {
     const query = `
         UPDATE receipt
-        SET requester_id = ?, department_id = ?, account_id = ?, receipt_date = ?, description = ?, amount = ?, status = ?, receipt_image_url = ?
+        SET requester_id = ?, department_id = ?, account_id = ?, receipt_date = ?, description = ?, amount = ?, receipt_image_url = ?
         WHERE receipt_id = ?
     `;
-    const { requesterId, departmentId, accountId, receiptDate, description, amount, status, receiptImageUrl } = updatedData;
+    const { requesterId, departmentId, accountId, receiptDate, description, amount, receiptImageUrl } = updatedData;
 
     try {
         await pool.query(query, [
-            requesterId, departmentId, accountId, receiptDate, description, amount, status, receiptImageUrl, receiptId
+            requesterId, departmentId, accountId, receiptDate, description, amount, receiptImageUrl, receiptId
         ]);
     } catch (err) {
         throw err;
@@ -149,6 +167,26 @@ exports.deleteReceiptById = async (receiptId) => {
     `;
     try {
         await pool.query(query, [receiptId]);
+    } catch (err) {
+        throw err;
+    }
+};
+
+// Update receipt approval or rejection
+exports.updateReceiptApproval = async (receiptId, { status, adminId, responseDate, responseDescription, transferImageUrl }) => {
+    const query = `
+        UPDATE receipt
+        SET 
+            status = ?, 
+            admin_id = ?, 
+            response_date = ?, 
+            response_description = ?, 
+            transfer_image_url = ?
+        WHERE receipt_id = ?
+    `;
+
+    try {
+        await pool.query(query, [status, adminId, responseDate, responseDescription, transferImageUrl, receiptId]);
     } catch (err) {
         throw err;
     }

@@ -3,10 +3,9 @@ const {
     getFilteredReceipts,
     getReceiptById,
     updateReceipt,
-    deleteReceiptById
+    deleteReceiptById,
+    updateReceiptApproval
 } = require('../models/receiptModel');
-const { getDepartmentById } = require('../models/departmentModel');
-const { getUserById } = require('../models/userModel');
 const Multer = require('multer');
 const { ImgUpload } = require('../utils/imageUploader'); // Import image upload logic
 
@@ -26,22 +25,6 @@ exports.uploadReceiptImage = [
     // Return the image URL after successful upload
     async (req, res, next) => {
         try {
-            const { userId, departmentId } = req.query;
-
-            if (userId) {
-                const user = await getUserById(userId);
-                if (!user) {
-                    return res.status(404).json({ message: 'User not found.' });
-                }
-            }
-
-            if (departmentId) {
-                const department = await getDepartmentById(departmentId);
-                if (!department) {
-                    return res.status(404).json({ message: 'Department not found.' });
-                }
-            }
-
             if (!req.file || req.file.cloudStorageError) {
                 return res.status(400).json({
                     message: 'Image upload failed',
@@ -57,6 +40,33 @@ exports.uploadReceiptImage = [
             next(error); // Pass any errors to the error handler
         }
     }
+];
+
+// Middleware to upload reimbursement transfer proof image
+exports.uploadTransferImage = [
+    multer.single('transferImage'), // Handle the image file upload
+
+    // Middleware to upload image to GCS
+    ImgUpload.uploadToGcsReimbursementProof,
+
+    // Return the image URL after successful upload
+    async (req, res, next) => {
+        try {
+            if (!req.file || req.file.cloudStorageError) {
+                return res.status(400).json({
+                    message: 'Image upload failed',
+                    error: req.file ? req.file.cloudStorageError : 'No file uploaded',
+                });
+            }
+
+            res.status(200).json({
+                message: 'Reimbursement proof image uploaded successfully',
+                transferImageUrl: req.file.cloudStoragePublicUrl, // Send the image URL back to the client
+            });
+        } catch (error) {
+            next(error); // Pass any errors to the error handler
+        }
+    },
 ];
 
 // Controller to create the receipt and save the URL
@@ -118,13 +128,13 @@ exports.getReceipts = async (req, res, next) => {
 exports.updateReceipt = async (req, res, next) => {
     try {
         const { receiptId } = req.query;
-        const { requesterId, departmentId, accountId, receiptDate, description, amount, status, receiptImageUrl } = req.body;
+        const { requesterId, departmentId, accountId, receiptDate, description, amount, receiptImageUrl } = req.body;
 
         if (!receiptId) {
             return res.status(400).json({ message: 'Receipt ID is required for update.' });
         }
 
-        if (!requesterId || !departmentId || !accountId || !receiptDate || !description || !amount || !status || !receiptImageUrl) {
+        if (!requesterId || !departmentId || !accountId || !receiptDate || !description || !amount || !receiptImageUrl) {
             return res.status(400).json({ message: 'All fields are required for update.' });
         }
 
@@ -134,7 +144,7 @@ exports.updateReceipt = async (req, res, next) => {
         }
 
         // Prevent updating requestDate
-        const updatedData = { requesterId, departmentId, accountId, receiptDate, description, amount, status, receiptImageUrl };
+        const updatedData = { requesterId, departmentId, accountId, receiptDate, description, amount, receiptImageUrl };
         await updateReceipt(receiptId, updatedData);
         res.status(200).json({ message: 'Receipt updated successfully.' });
     } catch (error) {
@@ -160,5 +170,56 @@ exports.deleteReceipt = async (req, res, next) => {
         res.status(200).json({ message: 'Receipt deleted successfully.' });
     } catch (error) {
         next(error);
+    }
+};
+
+// Approve or reject a receipt
+exports.approveReceipt = async (req, res, next) => {
+    try {
+        const { receiptId } = req.query;
+        const { status, adminId, responseDescription, transferImageUrl } = req.body;
+
+        // Validate required fields
+        if (!receiptId || !status || !adminId || !responseDescription) {
+            return res.status(400).json({ message: 'Please provide all required fields: receiptId, status, adminId, and responseDescription.' });
+        }
+
+        // Ensure status is valid
+        if (!['approved', 'rejected'].includes(status)) {
+            return res.status(400).json({ message: 'Status must be either "approved" or "rejected".' });
+        }
+
+        // Fetch the receipt
+        const receipt = await getReceiptById(receiptId);
+        if (!receipt) {
+            return res.status(404).json({ message: 'Receipt not found.' });
+        }
+
+        // Ensure the receipt is under review before approval or rejection
+        if (receipt.status !== 'under_review') {
+            return res.status(400).json({ message: `Receipt cannot be ${status}. Current status is "${receipt.status}".` });
+        }
+
+        // Update the receipt with approval/rejection details
+        const responseDate = new Date();
+        await updateReceiptApproval(receiptId, {
+            status,
+            adminId,
+            responseDate,
+            responseDescription,
+            transferImageUrl: transferImageUrl || null // Optional
+        });
+
+        res.status(200).json({
+            message: `Receipt successfully ${status}.`,
+            receiptId,
+            status,
+            adminId,
+            responseDate,
+            responseDescription,
+            transferImageUrl
+        });
+    } catch (error) {
+        next(error); // Pass errors to the error handler
     }
 };

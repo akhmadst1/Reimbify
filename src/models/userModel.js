@@ -42,8 +42,8 @@ function formatUser(user) {
         email: user.email,
         userName: user.user_name,
         department: {
-            department_id: user.department_id,
-            department_name: user.department_name
+            departmentId: user.department_id,
+            departmentName: user.department_name
         },
         role: user.role,
         profileImageUrl: user.profile_image_url
