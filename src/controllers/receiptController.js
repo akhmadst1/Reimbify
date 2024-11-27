@@ -1,6 +1,6 @@
 const {
     createReceipt,
-    getAllReceipts,
+    getFilteredReceipts,
     getReceiptById,
     updateReceipt,
     deleteReceiptById
@@ -92,7 +92,7 @@ exports.createReceipt = async (req, res, next) => {
 // Get receipts
 exports.getReceipts = async (req, res, next) => {
     try {
-        const { receiptId } = req.query;
+        const { receiptId, userId, sorted, search, departmentId, status } = req.query;
 
         if (receiptId) {
             const receipt = await getReceiptById(receiptId);
@@ -102,7 +102,8 @@ exports.getReceipts = async (req, res, next) => {
             return res.status(200).json({ receipt });
         }
 
-        const receipts = await getAllReceipts();
+        // Fetch receipts based on parameters
+        const receipts = await getFilteredReceipts({ userId, sorted, search, departmentId, status });
         if (receipts.length === 0) {
             return res.status(404).json({ message: 'No receipts found.' });
         }

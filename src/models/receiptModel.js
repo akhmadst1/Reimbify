@@ -50,9 +50,28 @@ function formatReceipt(receipt) {
     };
 }
 
-// Get all receipts
-exports.getAllReceipts = async () => {
-    const query = `
+exports.getFilteredReceipts = async ({ userId, sorted, search, departmentId, status }) => {
+    const conditions = [];
+    const values = [];
+
+    if (userId) {
+        conditions.push('r.requester_id = ?');
+        values.push(userId);
+    }
+    if (search) {
+        conditions.push('LOWER(r.description) LIKE ?');
+        values.push(`%${search.toLowerCase()}%`);
+    }
+    if (departmentId) {
+        conditions.push('r.department_id = ?');
+        values.push(departmentId);
+    }
+    if (status) {
+        conditions.push('r.status = ?');
+        values.push(status);
+    }
+
+    let query = `
         SELECT 
             r.*,
             u.user_id, u.user_name, u.email,
@@ -65,7 +84,23 @@ exports.getAllReceipts = async () => {
         JOIN bank_account ba ON r.account_id = ba.account_id
         JOIN bank b ON ba.bank_id = b.bank_id
     `;
-    const [rows] = await pool.query(query);
+
+    // Add WHERE clause if there are any conditions
+    if (conditions.length > 0) {
+        query += ` WHERE ${conditions.join(' AND ')}`;
+    }
+
+    // Add sorting clause
+    if (sorted) {
+        if (sorted === 'asc') {
+            query += ' ORDER BY r.request_date ASC';
+        } else if (sorted === 'desc') {
+            query += ' ORDER BY r.request_date DESC';
+        }
+    }
+
+    // Execute the query
+    const [rows] = await pool.query(query, values);
     return rows.map(formatReceipt);
 };
 
