@@ -1,13 +1,13 @@
 const {
     createBankAccount,
-    findBankAccountById,
-    findBankAccountsByUserId,
+    getBankAccountById,
+    getBankAccountsByUserId,
     updateBankAccount,
     deleteBankAccountById,
     deleteBankAccountsByUserId,
     getAllBankAccounts,
 } = require('../models/bankAccountModel');
-const { findUserById } = require('../models/userModel');
+const { getUserById } = require('../models/userModel');
 const { encrypt, decrypt } = require('../utils/encryption');
 
 // Create a new bank account
@@ -16,7 +16,7 @@ exports.createBankAccount = async (req, res, next) => {
         const { accountTitle, accountHolderName, accountNumber, bankId, userId } = req.body;
         
         // Validate user existence
-        const user = await findUserById(userId);
+        const user = await getUserById(userId);
         if (!user) {
             return res.status(404).json({ message: 'User not found. Cannot create bank account.' });
         }
@@ -36,7 +36,7 @@ exports.getBankAccounts = async (req, res, next) => {
         const { accountId, userId } = req.query;
         
         if (accountId) {
-            const account = await findBankAccountById(accountId);
+            const account = await getBankAccountById(accountId);
             if (!account) {
                 return res.status(404).json({ message: 'Bank account not found.' });
             }
@@ -47,12 +47,12 @@ exports.getBankAccounts = async (req, res, next) => {
         
         if (userId) {
             // Validate user existence
-            const user = await findUserById(userId);
+            const user = await getUserById(userId);
             if (!user) {
                 return res.status(404).json({ message: 'User not found.' });
             }
 
-            const accounts = await findBankAccountsByUserId(userId);
+            const accounts = await getBankAccountsByUserId(userId);
             if (accounts.length === 0) {
                 return res.status(404).json({ message: 'No bank accounts found for this user.' });
             }
@@ -90,13 +90,13 @@ exports.updateBankAccount = async (req, res, next) => {
 
         const { accountTitle, accountHolderName, accountNumber, bankId } = req.body;
 
-        const account = await findBankAccountById(accountId);
+        const account = await getBankAccountById(accountId);
         if (!account) {
             return res.status(404).json({ message: 'Bank account not found.' });
         }
 
         // Ensure the associated user exists
-        const user = await findUserById(account.user.userId);
+        const user = await getUserById(account.user.userId);
         if (!user) {
             return res.status(404).json({ message: 'User not found. Cannot update bank account.' });
         }
@@ -120,13 +120,13 @@ exports.deleteBankAccounts = async (req, res, next) => {
         const { accountId, userId } = req.query;
 
         if (accountId) {
-            const account = await findBankAccountById(accountId);
+            const account = await getBankAccountById(accountId);
             if (!account) {
                 return res.status(404).json({ message: 'Bank account not found.' });
             }
 
             // Ensure the associated user exists
-            const user = await findUserById(account.user.userId);
+            const user = await getUserById(account.user.userId);
             if (!user) {
                 return res.status(404).json({ message: 'User not found. Cannot delete bank account.' });
             }
@@ -137,7 +137,7 @@ exports.deleteBankAccounts = async (req, res, next) => {
 
         if (userId) {
             // Validate user existence
-            const user = await findUserById(userId);
+            const user = await getUserById(userId);
             if (!user) {
                 return res.status(404).json({ message: 'User not found. Cannot delete bank accounts.' });
             }

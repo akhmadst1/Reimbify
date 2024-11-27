@@ -10,7 +10,7 @@ const {
 exports.createDepartment = async (req, res, next) => {
     try {
         const { departmentName } = req.body;
-        
+
         if (!departmentName) {
             return res.status(400).json({ message: 'Department name is required.' });
         }
@@ -22,9 +22,19 @@ exports.createDepartment = async (req, res, next) => {
     }
 };
 
-// Get all departments
+// Get departments
 exports.getDepartments = async (req, res, next) => {
     try {
+        const { departmentId } = req.query;
+
+        if (departmentId) {
+            const department = await getDepartmentById(departmentId);
+            if (!department) {
+                return res.status(404).json({ message: 'Department not found.' });
+            }
+            return res.status(200).json({ department });
+        }
+
         const departments = await getAllDepartments();
         if (departments.length === 0) {
             return res.status(404).json({ message: 'No departments found.' });
@@ -36,45 +46,26 @@ exports.getDepartments = async (req, res, next) => {
     }
 };
 
-// Get department by ID
-exports.getDepartmentById = async (req, res, next) => {
-    try {
-        const { departmentId } = req.query;
-
-        if (!departmentId) {
-            return res.status(400).json({ message: 'Department ID is required.' });
-        }
-
-        const department = await getDepartmentById(departmentId);
-        if (!department) {
-            return res.status(404).json({ message: 'Department not found.' });
-        }
-
-        return res.status(200).json({ department });
-    } catch (error) {
-        next(error);
-    }
-};
-
 // Update department name by ID
 exports.updateDepartment = async (req, res, next) => {
     try {
         const { departmentId } = req.query;
-        const { departmentName } = req.body;
-
+        
         if (!departmentId) {
             return res.status(400).json({ message: 'Department ID is required for update.' });
         }
-
+        
+        const { departmentName } = req.body;
+        
         if (!departmentName) {
             return res.status(400).json({ message: 'Department name is required.' });
         }
-
+        
         const department = await getDepartmentById(departmentId);
         if (!department) {
             return res.status(404).json({ message: 'Department not found.' });
         }
-
+        
         await updateDepartmentName(departmentId, departmentName);
         res.status(200).json({ message: 'Department updated successfully.' });
     } catch (error) {

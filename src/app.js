@@ -8,11 +8,12 @@ const profileRoutes = require('./routes/profile');
 const bankAccountRoutes = require('./routes/bankAccount');
 const departmentRoutes = require('./routes/department');
 const bankRoutes = require('./routes/bank');
+const receiptRoutes = require('./routes/receipt');
 
 const app = express();
 
 // Middleware
-app.use(bodyParser.urlencoded({extended: true}))
+app.use(bodyParser.urlencoded({ extended: true }))
 app.use(express.json());
 app.use(cors({ origin: '*' }));
 
@@ -22,6 +23,7 @@ app.use('/profile', profileRoutes);
 app.use('/bank-account', bankAccountRoutes);
 app.use('/department', departmentRoutes);
 app.use('/bank', bankRoutes);
+app.use('/request', receiptRoutes);
 
 // Global Error Handler
 app.use((err, req, res, next) => {

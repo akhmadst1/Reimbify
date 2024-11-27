@@ -50,7 +50,7 @@ function formatUser(user) {
     };
 }
 
-exports.findUserByEmail = async (email) => {
+exports.getUserByEmail = async (email) => {
     const query = `
         SELECT 
             user.user_id,
@@ -71,7 +71,7 @@ exports.findUserByEmail = async (email) => {
     return rows.length ? formatUser(rows[0]) : null;
 };
 
-exports.findUserById = async (userId) => {
+exports.getUserById = async (userId) => {
     const query = `
         SELECT 
             user.user_id,

@@ -3,7 +3,7 @@ const {
     updateDepartment,
     updateRole,
     updateProfileImage,
-    findUserById
+    getUserById
 } = require('../models/userModel');
 const Multer = require('multer')
 const { ImgUpload, bucket } = require('../utils/imageUploader');
@@ -16,19 +16,18 @@ const multer = Multer({
 exports.updateProfileDetails = async (req, res, next) => {
     try {
         const { userId } = req.query; // User ID
-        const { name, departmentId, role } = req.body;
-
         // Validate input
         if (!userId) {
             return res.status(400).json({ message: 'User ID is required' });
         }
-
+        
         // Check if the user exists
-        const user = await findUserById(userId);
+        const user = await getUserById(userId);
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
-
+        
+        const { name, departmentId, role } = req.body;
         // Update fields if provided
         if (name) {
             await updateName(userId, name);
@@ -41,7 +40,7 @@ exports.updateProfileDetails = async (req, res, next) => {
         }
 
         // Fetch updated user
-        const updatedUser = await findUserById(userId);
+        const updatedUser = await getUserById(userId);
 
         res.status(200).json({ message: 'Profile details updated successfully', user: updatedUser });
     } catch (error) {
@@ -64,7 +63,7 @@ exports.updateProfileImage = [
 
         try {
             // Check if the user exists
-            const user = await findUserById(userId);
+            const user = await getUserById(userId);
             if (!user) {
                 return res.status(404).json({ message: 'User not found' });
             }
@@ -114,7 +113,7 @@ exports.deleteProfileImage = async (req, res, next) => {
         const { userId } = req.query; // User ID
 
         // Check if the user exists
-        const user = await findUserById(userId);
+        const user = await getUserById(userId);
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }

@@ -52,7 +52,7 @@ exports.getAllBankAccounts = async () => {
 };
 
 // Find a bank account by ID with user and bank details
-exports.findBankAccountById = async (accountId) => {
+exports.getBankAccountById = async (accountId) => {
     const query = `
         SELECT 
             ba.account_id,
@@ -73,7 +73,7 @@ exports.findBankAccountById = async (accountId) => {
 };
 
 // Find all bank accounts for a specific user with bank details
-exports.findBankAccountsByUserId = async (userId) => {
+exports.getBankAccountsByUserId = async (userId) => {
     const query = `
         SELECT 
             ba.account_id,

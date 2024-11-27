@@ -10,7 +10,6 @@ const {
 exports.createBank = async (req, res, next) => {
     try {
         const { bankName } = req.body;
-        
         if (!bankName) {
             return res.status(400).json({ message: 'Bank name is required.' });
         }
@@ -22,9 +21,18 @@ exports.createBank = async (req, res, next) => {
     }
 };
 
-// Get all banks
+// Get banks
 exports.getBanks = async (req, res, next) => {
     try {
+        const { bankId } = req.query;
+        if (bankId) {
+            const bank = await getBankById(bankId);
+            if (!bank) {
+                return res.status(404).json({ message: 'Bank not found.' });
+            }
+            return res.status(200).json({ bank });
+        }
+
         const banks = await getAllBanks();
         if (banks.length === 0) {
             return res.status(404).json({ message: 'No banks found.' });
@@ -36,40 +44,19 @@ exports.getBanks = async (req, res, next) => {
     }
 };
 
-// Get bank by ID
-exports.getBankById = async (req, res, next) => {
-    try {
-        const { bankId } = req.query;
-
-        if (!bankId) {
-            return res.status(400).json({ message: 'Bank ID is required.' });
-        }
-
-        const bank = await getBankById(bankId);
-        if (!bank) {
-            return res.status(404).json({ message: 'Bank not found.' });
-        }
-
-        return res.status(200).json({ bank });
-    } catch (error) {
-        next(error);
-    }
-};
-
 // Update bank name by ID
 exports.updateBank = async (req, res, next) => {
     try {
         const { bankId } = req.query;
-        const { bankName } = req.body;
-
         if (!bankId) {
             return res.status(400).json({ message: 'Bank ID is required for update.' });
         }
-
+        
+        const { bankName } = req.body;
         if (!bankName) {
             return res.status(400).json({ message: 'Bank name is required.' });
         }
-
+        
         const bank = await getBankById(bankId);
         if (!bank) {
             return res.status(404).json({ message: 'Bank not found.' });
@@ -86,7 +73,6 @@ exports.updateBank = async (req, res, next) => {
 exports.deleteBank = async (req, res, next) => {
     try {
         const { bankId } = req.query;
-
         if (!bankId) {
             return res.status(400).json({ message: 'Bank ID is required for deletion.' });
         }

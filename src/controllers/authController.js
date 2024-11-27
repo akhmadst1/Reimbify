@@ -5,8 +5,8 @@ const {
     updatePassword,
     getAllUsers,
     getUsersByDepartmentId,
-    findUserByEmail,
-    findUserById,
+    getUserByEmail,
+    getUserById,
     deleteUserById,
     deleteUserByEmail,
     getHashedPassword
@@ -25,13 +25,14 @@ exports.register = async (req, res, next) => {
     try {
         const { email, password, userName, departmentId, role } = req.body;
 
-        const defaultRole = role || 'user'; // Default role is 'user'
-
         // Check if the email is already in use
-        const existingUser = await findUserByEmail(email);
+        const existingUser = await getUserByEmail(email);
         if (existingUser) {
             return res.status(400).json({ message: 'Email already in use.' });
         }
+        
+         // Default role is 'user'
+        const defaultRole = role || 'user';
 
         // Hash the password
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -65,7 +66,7 @@ exports.activateAccount = async (req, res, next) => {
         const { email, hashedPassword, userName, departmentId, defaultRole } = decoded;
 
         // Check if the user already exists (just in case)
-        const existingUser = await findUserByEmail(email);
+        const existingUser = await getUserByEmail(email);
         if (existingUser) {
             return res.status(400).json({ message: 'Account already activated or email in use.' });
         }
@@ -86,7 +87,7 @@ exports.activateAccount = async (req, res, next) => {
 exports.loginOTP = async (req, res, next) => {
     try {
         const { email, password } = req.body;
-        const user = await findUserByEmail(email);
+        const user = await getUserByEmail(email);
 
         if (!user) return res.status(404).json({ message: 'User not found' });
 
@@ -111,7 +112,7 @@ exports.loginOTP = async (req, res, next) => {
 exports.login = async (req, res, next) => {
     try {
         const { email, password } = req.body;
-        const user = await findUserByEmail(email);
+        const user = await getUserByEmail(email);
 
         if (!user) return res.status(404).json({ message: 'User not found' });
 
@@ -133,7 +134,7 @@ exports.login = async (req, res, next) => {
 exports.verifyOtp = async (req, res, next) => {
     try {
         const { userId, otp } = req.body;
-        const user = await findUserById(userId);
+        const user = await getUserById(userId);
 
         if (!user) return res.status(404).json({ message: 'User not found' });
 
@@ -157,7 +158,7 @@ exports.verifyOtp = async (req, res, next) => {
 exports.resendOtp = async (req, res, next) => {
     try {
         const { userId } = req.body;
-        const user = await findUserById(userId);
+        const user = await getUserById(userId);
         if (!user) return res.status(404).json({ message: 'User not found' });
 
         const newOtp = generateOtp();
@@ -176,7 +177,7 @@ exports.resendOtp = async (req, res, next) => {
 exports.forgotPassword = async (req, res, next) => {
     try {
         const { email } = req.body;
-        const user = await findUserByEmail(email);
+        const user = await getUserByEmail(email);
         if (!user) return res.status(404).json({ message: 'User not found' });
 
         const otp = generateOtp();
@@ -195,7 +196,7 @@ exports.forgotPassword = async (req, res, next) => {
 exports.resetPassword = async (req, res, next) => {
     try {
         const { userId, otp, newPassword } = req.body;
-        const user = await findUserById(userId);
+        const user = await getUserById(userId);
 
         if (!user) return res.status(404).json({ message: 'User not found' });
 
@@ -219,7 +220,7 @@ exports.resetPassword = async (req, res, next) => {
 exports.changePassword = async (req, res, next) => {
     try {
         const { userId, oldPassword, newPassword } = req.body;
-        const user = await findUserById(userId);
+        const user = await getUserById(userId);
         if (!user) return res.status(404).json({ message: 'User not found' });
 
         const userPassword = await getHashedPassword(user.userId);
@@ -243,7 +244,7 @@ exports.getUsers = async (req, res, next) => {
 
         // Get user by ID
         if (userId) {
-            const user = await findUserById(userId);
+            const user = await getUserById(userId);
             if (!user) {
                 return res.status(404).json({ message: 'User not found by ID' });
             }
@@ -252,7 +253,7 @@ exports.getUsers = async (req, res, next) => {
 
         // Get user by email
         if (email) {
-            const user = await findUserByEmail(email);
+            const user = await getUserByEmail(email);
             if (!user) {
                 return res.status(404).json({ message: 'User not found by email' });
             }
@@ -293,7 +294,7 @@ exports.deleteUser = async (req, res, next) => {
 
         // Find user by ID if provided
         if (userId) {
-            user = await findUserById(userId);
+            user = await getUserById(userId);
             if (!user) return res.status(404).json({ message: 'User not found by ID' });
 
             await deleteUserById(userId);
@@ -301,7 +302,7 @@ exports.deleteUser = async (req, res, next) => {
 
         // Find user by email if provided
         if (email) {
-            user = await findUserByEmail(email);
+            user = await getUserByEmail(email);
             if (!user) return res.status(404).json({ message: 'User not found by email' });
 
             await deleteUserByEmail(email);
