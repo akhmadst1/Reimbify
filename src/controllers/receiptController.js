@@ -7,7 +7,7 @@ const {
     updateReceiptApproval
 } = require('../models/receiptModel');
 const Multer = require('multer');
-const { ImgUpload } = require('../utils/imageUploader'); // Import image upload logic
+const { ImgUpload, bucket } = require('../utils/imageUploader'); // Import image upload logic
 
 // Set up Multer for image upload
 const multer = Multer({
@@ -93,7 +93,7 @@ exports.createReceipt = async (req, res, next) => {
         // Call the model to create a new receipt
         const createdReceipt = await createReceipt(receipt);
 
-        res.status(201).json({message: 'Receipt created successfully.'});
+        res.status(201).json({ message: 'Receipt created successfully.' });
     } catch (error) {
         next(error); // Pass any errors to the error handler
     }
@@ -165,11 +165,30 @@ exports.deleteReceipt = async (req, res, next) => {
         if (!receipt) {
             return res.status(404).json({ message: 'Receipt not found.' });
         }
-
+        
         await deleteReceiptById(receiptId);
+        
+        const receiptImage = receipt.receiptImageUrl;
+        if (receiptImage) {
+            const gcsnameReceiptImage = 'receipts/' + receipt.receiptImageUrl.split("receipts/")[1];
+            const fileReceiptImage = bucket.file(gcsnameReceiptImage);
+            await fileReceiptImage.delete();
+        }
+        
+        const transferImage = receipt.approval.transferImageUrl;
+        if (transferImage) {
+            const gcsnameTransferImage = 'receipts/' + transferImage.split("receipts/")[1];
+            const fileTransferImage = bucket.file(gcsnameTransferImage);
+            await fileTransferImage.delete();
+        }
+        
         res.status(200).json({ message: 'Receipt deleted successfully.' });
     } catch (error) {
-        next(error);
+        if (error.code === 404) {
+            res.status(404).json({ message: 'File not found in storage' });
+        } else {
+            next(error); // Pass other errors to the global error handler
+        }
     }
 };
 
