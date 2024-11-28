@@ -21,7 +21,7 @@ router.post('/login', login);
 router.post('/otp/verify', verifyOtp);
 router.post('/otp/resend', resendOtp);
 router.post('/password/forgot', forgotPassword);
-router.post('/password/reset', resetPassword);
+router.post('/password/reset', verifyToken, resetPassword);
 router.post('/password/update', verifyToken, changePassword);
 router.get('/users', verifyToken, getUsers);
 router.delete('/delete', verifyToken, deleteUser);
