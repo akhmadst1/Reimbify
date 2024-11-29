@@ -6,6 +6,9 @@ const {
     deleteReceiptById,
     updateReceiptApproval
 } = require('../models/receiptModel');
+const { getUserById } = require('../models/userModel');
+const { getDepartmentById } = require('../models/departmentModel');
+const { getBankAccountById } = require('../models/bankAccountModel');
 const Multer = require('multer');
 const { ImgUpload, bucket } = require('../utils/imageUploader'); // Import image upload logic
 
@@ -77,6 +80,24 @@ exports.createReceipt = async (req, res, next) => {
         // Validate required fields
         if (!requesterId || !departmentId || !accountId || !receiptDate || !amount || !receiptImageUrl) {
             return res.status(400).json({ message: 'Please provide all required fields.' });
+        }
+
+        // Validate if the user exists
+        const user = await getUserById(requesterId);
+        if (!user) {
+            return res.status(404).json({ message: 'Requester account not found.' });
+        }
+
+        // Validate if the department exists
+        const department = await getDepartmentById(departmentId);
+        if (!department) {
+            return res.status(404).json({ message: 'Department not found.' });
+        }
+
+        // Validate if the bank account exists
+        const account = await getBankAccountById(accountId);
+        if (!account) {
+            return res.status(404).json({ message: 'Bank account not found.' });
         }
 
         // Create the receipt object
@@ -165,23 +186,23 @@ exports.deleteReceipt = async (req, res, next) => {
         if (!receipt) {
             return res.status(404).json({ message: 'Receipt not found.' });
         }
-        
+
         await deleteReceiptById(receiptId);
-        
+
         const receiptImage = receipt.receiptImageUrl;
         if (receiptImage) {
             const gcsnameReceiptImage = 'receipts/' + receipt.receiptImageUrl.split("receipts/")[1];
             const fileReceiptImage = bucket.file(gcsnameReceiptImage);
             await fileReceiptImage.delete();
         }
-        
+
         const transferImage = receipt.approval.transferImageUrl;
         if (transferImage) {
             const gcsnameTransferImage = 'receipts/' + transferImage.split("receipts/")[1];
             const fileTransferImage = bucket.file(gcsnameTransferImage);
             await fileTransferImage.delete();
         }
-        
+
         res.status(200).json({ message: 'Receipt deleted successfully.' });
     } catch (error) {
         if (error.code === 404) {

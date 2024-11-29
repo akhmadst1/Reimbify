@@ -130,3 +130,4 @@ dist
 .pnp.*
 
 serviceaccountkey.json
+.vscode
