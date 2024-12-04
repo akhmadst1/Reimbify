@@ -79,8 +79,10 @@ exports.getFilteredReceipts = async ({ userId, sorted, search, departmentId, sta
         values.push(departmentId);
     }
     if (status) {
-        conditions.push('r.status = ?');
-        values.push(status);
+        // Handle multiple statuses (e.g., 'approved+rejected')
+        const statuses = status.split(',').map((s) => s.trim());
+        conditions.push(`r.status IN (${statuses.map(() => '?').join(', ')})`);
+        values.push(...statuses);
     }
 
     let query = `
@@ -97,7 +99,7 @@ exports.getFilteredReceipts = async ({ userId, sorted, search, departmentId, sta
         JOIN department d ON r.department_id = d.department_id
         JOIN bank_account ba ON r.account_id = ba.account_id
         JOIN bank b ON ba.bank_id = b.bank_id
-        LEFT JOIN user admin ON r.admin_id = admin.user_id;
+        LEFT JOIN user admin ON r.admin_id = admin.user_id
     `;
 
     // Add WHERE clause if there are any conditions
