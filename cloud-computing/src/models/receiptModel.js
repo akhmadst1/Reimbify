@@ -131,6 +131,92 @@ exports.getReceipts = async ({ receiptId, userId, sorted, search, departmentId, 
     return rows.map(formatReceipt);
 };
 
+exports.getTotalAmountByStatus = async (statuses) => {
+    const placeholders = statuses.map(() => '?').join(', ');
+    const query = `
+        SELECT 
+            status, 
+            SUM(amount) AS totalAmount
+        FROM receipt
+        WHERE status IN (${placeholders})
+        GROUP BY status
+    `;
+
+    try {
+        const [rows] = await pool.query(query, statuses);
+        return rows.reduce((acc, row) => {
+            acc[row.status] = parseFloat(row.totalAmount) || 0; // Default to 0
+            return acc;
+        }, {});
+    } catch (err) {
+        throw err;
+    }
+};
+
+exports.getTotalAmountMonthly = async (year, userId) => {
+    const conditions = [];
+    const values = [];
+
+    // Add filters
+    conditions.push('YEAR(r.request_date) = ?');
+    values.push(year);
+
+    if (userId) {
+        conditions.push('r.requester_id = ?');
+        values.push(userId);
+    }
+
+    // Query to fetch monthly totals and breakdowns by status
+    const query = `
+        SELECT
+            YEAR(r.request_date) AS year,
+            MONTH(r.request_date) AS month,
+            ${userId ? 'r.requester_id,' : ''} 
+            r.status,
+            SUM(r.amount) AS totalAmount
+        FROM receipt r
+        ${conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''}
+        GROUP BY 
+            YEAR(r.request_date), 
+            MONTH(r.request_date),
+            ${userId ? 'r.requester_id,' : ''} 
+            r.status
+        ORDER BY 
+            YEAR(r.request_date), 
+            MONTH(r.request_date),
+            r.status
+    `;
+
+    try {
+        const [rows] = await pool.query(query, values);
+
+        // Transform rows into grouped structure with monthly totals
+        const result = {};
+        rows.forEach(row => {
+            const key = `${row.year}-${row.month}`;
+            if (!result[key]) {
+                result[key] = {
+                    year: row.year,
+                    month: row.month,
+                    ...(userId ? { userId: row.requester_id } : {}),
+                    totalAmount: 0, // Initialize total amount
+                    status: {}
+                };
+            }
+
+            // Increment total amount for the month, converting to number
+            result[key].totalAmount += parseFloat(row.totalAmount);
+
+            // Add breakdown for the current status
+            result[key].status[row.status] = parseFloat(row.totalAmount);
+        });
+
+        return Object.values(result);
+    } catch (err) {
+        throw err;
+    }
+};
+
 // Update receipt by ID
 exports.updateReceipt = async (receiptId, updatedData) => {
     const query = `

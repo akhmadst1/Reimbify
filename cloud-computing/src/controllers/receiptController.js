@@ -3,7 +3,9 @@ const {
     getReceipts,
     updateReceipt,
     deleteReceiptById,
-    updateReceiptApproval
+    updateReceiptApproval,
+    getTotalAmountByStatus,
+    getTotalAmountMonthly
 } = require('../models/receiptModel');
 const { getUsers } = require('../models/userModel');
 const { getDepartmentById } = require('../models/departmentModel');
@@ -138,6 +140,40 @@ exports.getReceipts = async (req, res, next) => {
     }
 };
 
+// Get Total Amount By Status
+exports.getTotalAmountByStatus = async (req, res, next) => {
+    try {
+        const { status } = req.query; // Accept `status` as a comma-separated string
+        if (!status) {
+            return res.status(400).json({ message: "Status parameter is required." });
+        }
+
+        const statusArray = status.split(',').map((s) => s.trim());
+        const totals = await getTotalAmountByStatus(statusArray);
+
+        return res.status(200).json(totals);
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.getTotalAmountMonthly = async (req, res, next) => {
+    try {
+        const { year, userId } = req.query;
+
+        // Validate required parameters
+        if (!year) {
+            return res.status(400).json({ message: "Year is required." });
+        }
+
+        // Fetch totals from the model
+        const totals = await getTotalAmountMonthly(year, userId);
+
+        return res.status(200).json(totals);
+    } catch (error) {
+        next(error);
+    }
+};
 
 // Update receipt by ID
 exports.updateReceipt = async (req, res, next) => {
