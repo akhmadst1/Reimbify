@@ -217,46 +217,78 @@ exports.getTotalAmountMonthly = async (year, userId) => {
     }
 };
 
-exports.getTotalReceipts = async (departmentId, userId) => {
+exports.getTotalReceipts = async (departmentId, userId, statusList) => {
     let query = `
         SELECT 
-            status,
+            department.department_name,
+            receipt.department_id,
+            receipt.status,
             COUNT(*) AS total
-        FROM receipt
+        FROM
+            receipt
+        JOIN 
+            department ON receipt.department_id = department.department_id
     `;
 
     const conditions = [];
     const params = [];
 
+    // Apply filters if provided
     if (departmentId) {
-        conditions.push('department_id = ?');
+        conditions.push('receipt.department_id = ?');
         params.push(departmentId);
     }
 
     if (userId) {
-        conditions.push('requester_id = ?');
+        conditions.push('receipt.requester_id = ?');
         params.push(userId);
+    }
+
+    if (statusList && statusList.length > 0) {
+        conditions.push('receipt.status IN (?)');
+        params.push(statusList);
     }
 
     if (conditions.length > 0) {
         query += ' WHERE ' + conditions.join(' AND ');
     }
 
-    query += ' GROUP BY status ORDER BY status;';
+    // Add grouping logic
+    if (statusList && statusList.length === 1) {
+        // Group by department when filtering by specific status
+        query += ' GROUP BY receipt.department_id ORDER BY receipt.department_id;';
+    } else {
+        // Default grouping
+        query += ' GROUP BY receipt.department_id, receipt.status ORDER BY receipt.department_id, receipt.status;';
+    }
 
     try {
         const [rows] = await pool.query(query, params);
 
-        // Format the result
-        return {
-            under_review: 0,
-            approved: 0,
-            rejected: 0,
-            ...rows.reduce((acc, row) => {
-                acc[row.status] = parseInt(row.total, 10);
+        if (statusList && statusList.length === 1) {
+            // Return breakdown by department for specific status
+            return rows.reduce((acc, row) => {
+                acc.push({
+                    departmentId: row.department_id,
+                    departmentName: row.department_name,
+                    total: parseInt(row.total, 10)
+                });
                 return acc;
-            }, {}),
-        };
+            }, []);
+        } else {
+            // Return total counts grouped by status
+            return rows.reduce((acc, row) => {
+                if (!acc[row.status]) {
+                    acc[row.status] = 0;
+                }
+                acc[row.status] += parseInt(row.total, 10);
+                return acc;
+            }, {
+                under_review: 0,
+                approved: 0,
+                rejected: 0,
+            });
+        }
     } catch (err) {
         throw err;
     }

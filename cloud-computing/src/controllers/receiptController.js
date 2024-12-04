@@ -178,10 +178,12 @@ exports.getTotalAmountMonthly = async (req, res, next) => {
 
 exports.getTotalReceipts = async (req, res, next) => {
     try {
-        const { departmentId, userId } = req.query;
+        const { departmentId, userId, status } = req.query;
 
-        // Call the model function with the departmentId and userId (optional)
-        const totals = await getTotalReceipts(departmentId, userId);
+        // Prepare status list
+        const statusList = status ? status.split(',') : [];
+
+        const totals = await getTotalReceipts(departmentId, userId, statusList);
 
         return res.status(200).json(totals);
     } catch (error) {
