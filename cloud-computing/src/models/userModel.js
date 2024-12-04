@@ -50,8 +50,9 @@ function formatUser(user) {
     };
 }
 
-exports.getUserByEmail = async (email) => {
-    const query = `
+exports.getUsers = async (email, userId, departmentId, search, sorted, role) => {
+    // Base query
+    let query = `
         SELECT 
             user.user_id,
             user.email,
@@ -64,73 +65,49 @@ exports.getUserByEmail = async (email) => {
             user
         JOIN 
             department ON user.department_id = department.department_id
-        WHERE 
-            user.email = ?
     `;
-    const [rows] = await pool.query(query, [email]);
-    return rows.length ? formatUser(rows[0]) : null;
-};
 
-exports.getUserById = async (userId) => {
-    const query = `
-        SELECT 
-            user.user_id,
-            user.email,
-            user.user_name,
-            department.department_id,
-            department.department_name,
-            user.role,
-            user.profile_image_url
-        FROM 
-            user
-        JOIN 
-            department ON user.department_id = department.department_id
-        WHERE 
-            user.user_id = ?
-    `;
-    const [rows] = await pool.query(query, [userId]);
-    return rows.length ? formatUser(rows[0]) : null;
-};
+    // Initialize parameters array for prepared statement
+    const params = [];
+    const conditions = [];
 
-exports.getUsersByDepartmentId = async (departmentId) => {
-    const query = `
-        SELECT 
-            user.user_id,
-            user.email,
-            user.user_name,
-            department.department_id,
-            department.department_name,
-            user.role,
-            user.profile_image_url
-        FROM 
-            user
-        JOIN 
-            department ON user.department_id = department.department_id
-        WHERE 
-            department.department_id = ?
-    `;
-    
-    const [rows] = await pool.query(query, [departmentId]);
-    
-    return rows.map(formatUser);
-};
+    // Add conditions based on parameters
+    if (email) {
+        conditions.push(`user.email = ?`);
+        params.push(email);
+    }
+    if (userId) {
+        conditions.push(`user.user_id = ?`);
+        params.push(userId);
+    }
+    if (departmentId) {
+        conditions.push(`user.department_id = ?`);
+        params.push(departmentId);
+    }
+    if (role) {
+        conditions.push(`user.role = ?`);
+        params.push(role);
+    }
+    if (search) {
+        conditions.push(`(user.user_name LIKE ? OR user.email LIKE ?)`);
+        params.push(`%${search}%`, `%${search}%`);
+    }
 
-exports.getAllUsers = async () => {
-    const query = `
-        SELECT 
-            user.user_id,
-            user.email,
-            user.user_name,
-            department.department_id,
-            department.department_name,
-            user.role,
-            user.profile_image_url
-        FROM 
-            user
-        JOIN 
-            department ON user.department_id = department.department_id
-    `;
-    const [rows] = await pool.query(query);
+    // Append conditions to the query
+    if (conditions.length > 0) {
+        query += ` WHERE ` + conditions.join(` AND `);
+    }
+
+    // Add sorting if provided
+    if (sorted) {
+        const allowedColumns = ['user_name', 'email', 'role']; // Define allowed columns for safety
+        const [column, direction] = sorted.split(':');
+        if (allowedColumns.includes(column) && ['asc', 'desc'].includes(direction.toLowerCase())) {
+            query += ` ORDER BY ${column} ${direction.toUpperCase()}`;
+        }
+    }
+
+    const [rows] = await pool.query(query, params);
     return rows.map(formatUser);
 };
 

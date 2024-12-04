@@ -7,7 +7,7 @@ const {
     deleteBankAccountsByUserId,
     getAllBankAccounts,
 } = require('../models/bankAccountModel');
-const { getUserById } = require('../models/userModel');
+const { getUsers } = require('../models/userModel');
 const { encrypt, decrypt } = require('../utils/encryption');
 
 // Create a new bank account
@@ -16,7 +16,7 @@ exports.createBankAccount = async (req, res, next) => {
         const { accountTitle, accountHolderName, accountNumber, bankId, userId } = req.body;
         
         // Validate user existence
-        const user = await getUserById(userId);
+        const user = await getUsers(userId);
         if (!user) {
             return res.status(404).json({ message: 'User not found. Cannot create bank account.' });
         }
@@ -47,7 +47,7 @@ exports.getBankAccounts = async (req, res, next) => {
         
         if (userId) {
             // Validate user existence
-            const user = await getUserById(userId);
+            const user = await getUsers(userId);
             if (!user) {
                 return res.status(404).json({ message: 'User not found.' });
             }
@@ -96,7 +96,8 @@ exports.updateBankAccount = async (req, res, next) => {
         }
 
         // Ensure the associated user exists
-        const user = await getUserById(account.user.userId);
+        const userId = account.user.userId;
+        const user = await getUsers(userId);
         if (!user) {
             return res.status(404).json({ message: 'User not found. Cannot update bank account.' });
         }
@@ -126,7 +127,8 @@ exports.deleteBankAccounts = async (req, res, next) => {
             }
 
             // Ensure the associated user exists
-            const user = await getUserById(account.user.userId);
+            const userId = account.user.userId;
+            const user = await getUsers(userId);
             if (!user) {
                 return res.status(404).json({ message: 'User not found. Cannot delete bank account.' });
             }
@@ -137,7 +139,7 @@ exports.deleteBankAccounts = async (req, res, next) => {
 
         if (userId) {
             // Validate user existence
-            const user = await getUserById(userId);
+            const user = await getUsers(userId);
             if (!user) {
                 return res.status(404).json({ message: 'User not found. Cannot delete bank accounts.' });
             }
