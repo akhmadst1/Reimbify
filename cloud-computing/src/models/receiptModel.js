@@ -62,29 +62,35 @@ function formatReceipt(receipt) {
     };
 }
 
-exports.getFilteredReceipts = async ({ userId, sorted, search, departmentId, status }) => {
+exports.getReceipts = async ({ receiptId, userId, sorted, search, departmentId, status }) => {
     const conditions = [];
     const values = [];
 
+    // Add conditions based on parameters
+    if (receiptId) {
+        conditions.push('r.receipt_id = ?');
+        values.push(receiptId);
+    }
     if (userId) {
         conditions.push('r.requester_id = ?');
         values.push(userId);
     }
     if (search) {
-        conditions.push('LOWER(r.description) LIKE ?');
-        values.push(`%${search.toLowerCase()}%`);
+        conditions.push('(LOWER(r.description) LIKE ? OR LOWER(u.user_name) LIKE ? OR LOWER(u.email) LIKE ?)');
+        const searchTerm = `%${search.toLowerCase()}%`;
+        values.push(searchTerm, searchTerm, searchTerm);
     }
     if (departmentId) {
         conditions.push('r.department_id = ?');
         values.push(departmentId);
     }
     if (status) {
-        // Handle multiple statuses (e.g., 'approved+rejected')
         const statuses = status.split(',').map((s) => s.trim());
         conditions.push(`r.status IN (${statuses.map(() => '?').join(', ')})`);
         values.push(...statuses);
     }
 
+    // Base query
     let query = `
         SELECT 
             r.*,
@@ -102,46 +108,27 @@ exports.getFilteredReceipts = async ({ userId, sorted, search, departmentId, sta
         LEFT JOIN user admin ON r.admin_id = admin.user_id
     `;
 
-    // Add WHERE clause if there are any conditions
+    // Add WHERE clause if conditions exist
     if (conditions.length > 0) {
         query += ` WHERE ${conditions.join(' AND ')}`;
     }
 
     // Add sorting clause
     if (sorted) {
-        if (sorted === 'asc') {
-            query += ' ORDER BY r.request_date ASC';
-        } else if (sorted === 'desc') {
-            query += ' ORDER BY r.request_date DESC';
+        const [column, direction] = sorted.split(':');
+        const allowedColumns = ['request_date', 'status', 'amount']; // Define allowed columns
+        if (allowedColumns.includes(column) && ['asc', 'desc'].includes(direction.toLowerCase())) {
+            query += ` ORDER BY r.${column} ${direction.toUpperCase()}`;
+        } else {
+            query += ' ORDER BY r.request_date DESC'; // Default sorting
         }
+    } else {
+        query += ' ORDER BY r.request_date DESC'; // Default sorting
     }
 
-    // Execute the query
+    // Execute query
     const [rows] = await pool.query(query, values);
     return rows.map(formatReceipt);
-};
-
-// Get receipt by ID
-exports.getReceiptById = async (receiptId) => {
-    const query = `
-        SELECT 
-            r.*,
-            u.user_id, u.user_name, u.email,
-            d.department_id, d.department_name,
-            ba.account_id, ba.account_title, ba.account_holder_name, ba.account_number_encrypted,
-            b.bank_id, b.bank_name,
-            admin.user_id AS admin_id, admin.user_name AS admin_name, admin.email AS admin_email,
-            r.response_date, r.transfer_image_url, r.response_description
-        FROM receipt r
-        JOIN user u ON r.requester_id = u.user_id
-        JOIN department d ON r.department_id = d.department_id
-        JOIN bank_account ba ON r.account_id = ba.account_id
-        JOIN bank b ON ba.bank_id = b.bank_id
-        LEFT JOIN user admin ON r.admin_id = admin.user_id
-        WHERE r.receipt_id = ?;
-    `;
-    const [rows] = await pool.query(query, [receiptId]);
-    return rows.length ? formatReceipt(rows[0]) : null;
 };
 
 // Update receipt by ID

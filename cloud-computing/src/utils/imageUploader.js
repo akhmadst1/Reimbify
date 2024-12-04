@@ -1,8 +1,8 @@
 'use strict'
 const { Storage } = require('@google-cloud/storage')
 const path = require('path');
-const { getUserById } = require('../models/userModel');
-const { getReceiptById } = require('../models/receiptModel');
+const { getUsers } = require('../models/userModel');
+const { getReceipts } = require('../models/receiptModel');
 require('dotenv').config();
 
 const pathKey = path.resolve('./serviceaccountkey.json')
@@ -57,7 +57,7 @@ ImgUpload.uploadToGcsReceipts = async (req, res, next) => {
         return res.status(400).json({ message: 'userId are required.' });
     }
 
-    const user = await getUserById(userId);
+    const user = await getUsers(userId);
     if (!user) {
         return res.status(404).json({ message: 'User not found.' });
     }
@@ -102,7 +102,7 @@ ImgUpload.uploadToGcsReimbursementProof = async (req, res, next) => {
         return res.status(400).json({ message: 'receiptId are required.' });
     }
 
-    const receipt = await getReceiptById(receiptId);
+    const receipt = await getReceipts(receiptId);
     if (!receipt) {
         return res.status(404).json({ message: 'Receipt not found.' });
     }

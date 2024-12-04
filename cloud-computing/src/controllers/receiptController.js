@@ -1,12 +1,11 @@
 const {
     createReceipt,
-    getFilteredReceipts,
-    getReceiptById,
+    getReceipts,
     updateReceipt,
     deleteReceiptById,
     updateReceiptApproval
 } = require('../models/receiptModel');
-const { getUserById } = require('../models/userModel');
+const { getUsers } = require('../models/userModel');
 const { getDepartmentById } = require('../models/departmentModel');
 const { getBankAccountById } = require('../models/bankAccountModel');
 const Multer = require('multer');
@@ -83,7 +82,8 @@ exports.createReceipt = async (req, res, next) => {
         }
 
         // Validate if the user exists
-        const user = await getUserById(requesterId);
+        const userId = requesterId;
+        const user = await getUsers(userId);
         if (!user) {
             return res.status(404).json({ message: 'Requester account not found.' });
         }
@@ -120,21 +120,14 @@ exports.createReceipt = async (req, res, next) => {
     }
 };
 
-// Get receipts
+// Get Receipts
 exports.getReceipts = async (req, res, next) => {
     try {
         const { receiptId, userId, sorted, search, departmentId, status } = req.query;
 
-        if (receiptId) {
-            const receipt = await getReceiptById(receiptId);
-            if (!receipt) {
-                return res.status(404).json({ message: 'Receipt not found.' });
-            }
-            return res.status(200).json({ receipt });
-        }
-
         // Fetch receipts based on parameters
-        const receipts = await getFilteredReceipts({ userId, sorted, search, departmentId, status });
+        const receipts = await getReceipts({ receiptId, userId, sorted, search, departmentId, status });
+
         if (receipts.length === 0) {
             return res.status(404).json({ message: 'No receipts found.' });
         }
@@ -144,6 +137,7 @@ exports.getReceipts = async (req, res, next) => {
         next(error);
     }
 };
+
 
 // Update receipt by ID
 exports.updateReceipt = async (req, res, next) => {
@@ -159,7 +153,7 @@ exports.updateReceipt = async (req, res, next) => {
             return res.status(400).json({ message: 'All fields are required for update.' });
         }
 
-        const receipt = await getReceiptById(receiptId);
+        const receipt = await getReceipts(receiptId);
         if (!receipt) {
             return res.status(404).json({ message: 'Receipt not found.' });
         }
@@ -182,7 +176,7 @@ exports.deleteReceipt = async (req, res, next) => {
             return res.status(400).json({ message: 'Receipt ID is required for deletion.' });
         }
 
-        const receipt = await getReceiptById(receiptId);
+        const receipt = await getReceipts(receiptId);
         if (!receipt) {
             return res.status(404).json({ message: 'Receipt not found.' });
         }
@@ -230,7 +224,7 @@ exports.approveReceipt = async (req, res, next) => {
         }
 
         // Fetch the receipt
-        const receipt = await getReceiptById(receiptId);
+        const receipt = await getReceipts(receiptId);
         if (!receipt) {
             return res.status(404).json({ message: 'Receipt not found.' });
         }
