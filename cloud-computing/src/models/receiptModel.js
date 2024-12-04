@@ -217,6 +217,51 @@ exports.getTotalAmountMonthly = async (year, userId) => {
     }
 };
 
+exports.getTotalReceipts = async (departmentId, userId) => {
+    let query = `
+        SELECT 
+            status,
+            COUNT(*) AS total
+        FROM receipt
+    `;
+
+    const conditions = [];
+    const params = [];
+
+    if (departmentId) {
+        conditions.push('department_id = ?');
+        params.push(departmentId);
+    }
+
+    if (userId) {
+        conditions.push('requester_id = ?');
+        params.push(userId);
+    }
+
+    if (conditions.length > 0) {
+        query += ' WHERE ' + conditions.join(' AND ');
+    }
+
+    query += ' GROUP BY status ORDER BY status;';
+
+    try {
+        const [rows] = await pool.query(query, params);
+
+        // Format the result
+        return {
+            under_review: 0,
+            approved: 0,
+            rejected: 0,
+            ...rows.reduce((acc, row) => {
+                acc[row.status] = parseInt(row.total, 10);
+                return acc;
+            }, {}),
+        };
+    } catch (err) {
+        throw err;
+    }
+};
+
 // Update receipt by ID
 exports.updateReceipt = async (receiptId, updatedData) => {
     const query = `

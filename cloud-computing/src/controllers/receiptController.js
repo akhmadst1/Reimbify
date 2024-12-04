@@ -5,7 +5,8 @@ const {
     deleteReceiptById,
     updateReceiptApproval,
     getTotalAmountByStatus,
-    getTotalAmountMonthly
+    getTotalAmountMonthly,
+    getTotalReceipts
 } = require('../models/receiptModel');
 const { getUsers } = require('../models/userModel');
 const { getDepartmentById } = require('../models/departmentModel');
@@ -172,6 +173,19 @@ exports.getTotalAmountMonthly = async (req, res, next) => {
         return res.status(200).json(totals);
     } catch (error) {
         next(error);
+    }
+};
+
+exports.getTotalReceipts = async (req, res, next) => {
+    try {
+        const { departmentId, userId } = req.query;
+
+        // Call the model function with the departmentId and userId (optional)
+        const totals = await getTotalReceipts(departmentId, userId);
+
+        return res.status(200).json(totals);
+    } catch (error) {
+        next(error); // Pass errors to the error handler
     }
 };
 
