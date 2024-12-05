@@ -53,11 +53,11 @@ ImgUpload.uploadToGcsReceipts = async (req, res, next) => {
     if (!req.file) return next();
 
     const { userId } = req.query;
-    if (!userId ) {
+    if (!userId) {
         return res.status(400).json({ message: 'userId are required.' });
     }
 
-    const userArray = await getUsers(userId);
+    const userArray = await getUsers({ userId });
     if (userArray.length == 0) {
         return res.status(404).json({ message: 'User not found.' });
     }

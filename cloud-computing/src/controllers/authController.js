@@ -23,7 +23,7 @@ exports.register = async (req, res, next) => {
         const { email, password, userName, departmentId, role } = req.body;
 
         // Check if the email is already in use
-        const existingUserArray = await getUsers(email);
+        const existingUserArray = await getUsers({ email });
         if (existingUserArray.length === 0) {
             return res.status(400).json({ message: 'Email already in use.' });
         }
@@ -63,7 +63,7 @@ exports.activateAccount = async (req, res, next) => {
         const { email, hashedPassword, userName, departmentId, defaultRole } = decoded;
 
         // Check if the user already exists (just in case)
-        const existingUserArray = await getUsers(email);
+        const existingUserArray = await getUsers({ email });
         if (existingUserArray.length === 0) {
             return res.status(400).json({ message: 'Account already activated or email in use.' });
         }
@@ -84,7 +84,7 @@ exports.activateAccount = async (req, res, next) => {
 exports.loginOTP = async (req, res, next) => {
     try {
         const { email, password } = req.body;
-        const userArray = await getUsers(email);
+        const userArray = await getUsers({ email });
         if (userArray.length === 0) return res.status(404).json({ message: 'User not found' });
         const user = userArray[0];
 
@@ -109,7 +109,7 @@ exports.loginOTP = async (req, res, next) => {
 exports.login = async (req, res, next) => {
     try {
         const { email, password } = req.body;
-        const userArray = await getUsers(email);
+        const userArray = await getUsers({ email });
         if (userArray.length === 0) return res.status(404).json({ message: 'User not found' });
         const user = userArray[0];
 
@@ -131,7 +131,7 @@ exports.login = async (req, res, next) => {
 exports.verifyOtp = async (req, res, next) => {
     try {
         const { userId, otp } = req.body;
-        const userArray = await getUsers(userId);
+        const userArray = await getUsers({ userId });
         if (userArray.length === 0) return res.status(404).json({ message: 'User not found' });
         const user = userArray[0];
 
@@ -155,7 +155,7 @@ exports.verifyOtp = async (req, res, next) => {
 exports.resendOtp = async (req, res, next) => {
     try {
         const { userId } = req.body;
-        const userArray = await getUsers(userId);
+        const userArray = await getUsers({ userId });
         if (userArray.length === 0) return res.status(404).json({ message: 'User not found' });
         const user = userArray[0];
 
@@ -175,7 +175,7 @@ exports.resendOtp = async (req, res, next) => {
 exports.forgotPassword = async (req, res, next) => {
     try {
         const { email } = req.body;
-        const userArray = await getUsers(email);
+        const userArray = await getUsers({ email });
         if (userArray.length === 0) return res.status(404).json({ message: 'User not found' });
         const user = userArray[0];
 
@@ -195,7 +195,7 @@ exports.forgotPassword = async (req, res, next) => {
 exports.resetPassword = async (req, res, next) => {
     try {
         const { userId, newPassword } = req.body;
-        const userArray = await getUsers(userId);
+        const userArray = await getUsers({ userId });
         if (userArray.length === 0) return res.status(404).json({ message: 'User not found' });
         const user = userArray[0];
 
@@ -212,7 +212,7 @@ exports.resetPassword = async (req, res, next) => {
 exports.changePassword = async (req, res, next) => {
     try {
         const { userId, oldPassword, newPassword } = req.body;
-        const userArray = await getUsers(userId);
+        const userArray = await getUsers({ userId });
         if (userArray.length === 0) return res.status(404).json({ message: 'User not found' });
         const user = userArray[0];
 
@@ -235,7 +235,7 @@ exports.getUsers = async (req, res, next) => {
     try {
         const { email, userId, departmentId, search, sorted, role } = req.query;
 
-        const users = await getUsers(email, userId, departmentId, search, sorted, role);
+        const users = await getUsers({ email, userId, departmentId, search, sorted, role });
         if (!users || users.length === 0) {
             return res.status(404).json({ message: 'No users found' });
         }
@@ -258,7 +258,7 @@ exports.deleteUser = async (req, res, next) => {
 
         // Find user by ID if provided
         if (userId) {
-            const userArray = await getUsers(userId);
+            const userArray = await getUsers({ userId });
             if (userArray.length === 0) return res.status(404).json({ message: 'User not found by ID' });
             user = userArray[0];
 
@@ -267,7 +267,7 @@ exports.deleteUser = async (req, res, next) => {
 
         // Find user by email if provided
         if (email) {
-            const userArray = await getUsers(email);
+            const userArray = await getUsers({ email });
             if (userArray.length === 0) return res.status(404).json({ message: 'User not found by email' });
             user = userArray[0];
 

@@ -20,13 +20,13 @@ exports.updateProfileDetails = async (req, res, next) => {
         if (!userId) {
             return res.status(400).json({ message: 'User ID is required' });
         }
-        
+
         // Check if the user exists
-        const userArray = await getUsers(userId);
+        const userArray = await getUsers({ userId });
         if (userArray.length === 0) {
             return res.status(404).json({ message: 'User not found' });
         }
-        
+
         const { name, departmentId, role } = req.body;
         // Update fields if provided
         if (name) {
@@ -40,7 +40,7 @@ exports.updateProfileDetails = async (req, res, next) => {
         }
 
         // Fetch updated user
-        const updatedUser = await getUsers(userId);
+        const updatedUser = await getUsers({ userId });
 
         res.status(200).json({ message: 'Profile details updated successfully', user: updatedUser[0] });
     } catch (error) {
@@ -51,7 +51,7 @@ exports.updateProfileDetails = async (req, res, next) => {
 exports.updateProfileImage = [
     // Middleware to handle the file upload
     multer.single('profileImage'),
-    
+
     // Middleware to validate user ID and file upload
     async (req, res, next) => {
         const { userId } = req.query;
@@ -63,7 +63,7 @@ exports.updateProfileImage = [
 
         try {
             // Check if the user exists
-            const userArray = await getUsers(userId);
+            const userArray = await getUsers({ userId });
             if (userArray.length === 0) {
                 return res.status(404).json({ message: 'User not found' });
             }
@@ -113,7 +113,7 @@ exports.deleteProfileImage = async (req, res, next) => {
         const { userId } = req.query; // User ID
 
         // Check if the user exists
-        const userArray = await getUsers(userId);
+        const userArray = await getUsers({ userId });
         if (userArray.length === 0) {
             return res.status(404).json({ message: 'User not found' });
         }

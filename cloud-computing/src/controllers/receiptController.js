@@ -86,7 +86,7 @@ exports.createReceipt = async (req, res, next) => {
 
         // Validate if the user exists
         const userId = requesterId;
-        const userArray = await getUsers(userId);
+        const userArray = await getUsers({ userId });
         if (userArray.length == 0) {
             return res.status(404).json({ message: 'Requester account not found.' });
         }

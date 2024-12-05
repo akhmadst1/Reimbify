@@ -50,7 +50,7 @@ function formatUser(user) {
     };
 }
 
-exports.getUsers = async (email, userId, departmentId, search, sorted, role) => {
+exports.getUsers = async ({ email, userId, departmentId, search, sorted, role }) => {
     // Base query
     let query = `
         SELECT 
