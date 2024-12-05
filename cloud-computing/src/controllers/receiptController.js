@@ -168,7 +168,7 @@ exports.getTotalAmountMonthly = async (req, res, next) => {
         }
 
         // Fetch totals from the model
-        const totals = await getTotalAmountMonthly(year, userId);
+        const totals = await getTotalAmountMonthly({year, userId});
 
         return res.status(200).json(totals);
     } catch (error) {
@@ -183,7 +183,7 @@ exports.getTotalReceipts = async (req, res, next) => {
         // Prepare status list
         const statusList = status ? status.split(',') : [];
 
-        const totals = await getTotalReceipts(departmentId, userId, statusList);
+        const totals = await getTotalReceipts({departmentId, userId, statusList});
 
         return res.status(200).json(totals);
     } catch (error) {

@@ -50,9 +50,9 @@ function formatReceipt(receipt) {
         approval: {
             admin: receipt.admin_id
                 ? {
-                    adminId: receipt.admin_id,
-                    adminName: receipt.admin_name,
-                    adminEmail: receipt.admin_email
+                    userId: receipt.admin_id,
+                    userName: receipt.admin_name,
+                    email: receipt.admin_email
                 }
                 : null,
             responseDate: receipt.response_date,
@@ -136,8 +136,8 @@ exports.getReceipts = async ({ receiptId, userId, sorted, search, departmentId, 
     return rows.map(formatReceipt);
 };
 
-exports.getTotalAmountByStatus = async (statuses) => {
-    const placeholders = statuses.map(() => '?').join(', ');
+exports.getTotalAmountByStatus = async (status) => {
+    const placeholders = status.map(() => '?').join(', ');
     const query = `
         SELECT 
             status, 
@@ -148,7 +148,7 @@ exports.getTotalAmountByStatus = async (statuses) => {
     `;
 
     try {
-        const [rows] = await pool.query(query, statuses);
+        const [rows] = await pool.query(query, status);
         return rows.reduce((acc, row) => {
             acc[row.status] = parseFloat(row.totalAmount) || 0; // Default to 0
             return acc;
@@ -158,7 +158,7 @@ exports.getTotalAmountByStatus = async (statuses) => {
     }
 };
 
-exports.getTotalAmountMonthly = async (year, userId) => {
+exports.getTotalAmountMonthly = async ({ year, userId }) => {
     const conditions = [];
     const values = [];
 
@@ -216,13 +216,13 @@ exports.getTotalAmountMonthly = async (year, userId) => {
             result[key].status[row.status] = parseFloat(row.totalAmount);
         });
 
-        return Object.values(result);
+        return { histories: Object.values(result) };
     } catch (err) {
         throw err;
     }
 };
 
-exports.getTotalReceipts = async (departmentId, userId, statusList) => {
+exports.getTotalReceipts = async ({ departmentId, userId, statusList }) => {
     let query = `
         SELECT 
             department.department_name,
@@ -272,14 +272,12 @@ exports.getTotalReceipts = async (departmentId, userId, statusList) => {
 
         if (statusList && statusList.length === 1) {
             // Return breakdown by department for specific status
-            return rows.reduce((acc, row) => {
-                acc.push({
-                    departmentId: row.department_id,
-                    departmentName: row.department_name,
-                    total: parseInt(row.total, 10)
-                });
-                return acc;
-            }, []);
+            const histories = rows.map(row => ({
+                departmentId: row.department_id,
+                departmentName: row.department_name,
+                total: parseInt(row.total, 10),
+            }));
+            return { histories };
         } else {
             // Return total counts grouped by status
             return rows.reduce((acc, row) => {
