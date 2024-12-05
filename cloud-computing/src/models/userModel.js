@@ -99,12 +99,21 @@ exports.getUsers = async (email, userId, departmentId, search, sorted, role) => 
     }
 
     // Add sorting if provided
-    if (sorted) {
+    if (sorted && typeof sorted === 'string') {
         const allowedColumns = ['user_name', 'email', 'role']; // Define allowed columns for safety
         const [column, direction] = sorted.split(':');
-        if (allowedColumns.includes(column) && ['asc', 'desc'].includes(direction.toLowerCase())) {
+        if (
+            column &&
+            allowedColumns.includes(column) &&
+            direction &&
+            ['asc', 'desc'].includes(direction.toLowerCase())
+        ) {
             query += ` ORDER BY ${column} ${direction.toUpperCase()}`;
+        } else {
+            query += ' ORDER BY user_name ASC'; // Default sorting if invalid
         }
+    } else {
+        query += ' ORDER BY user_name ASC'; // Default sorting if `sorted` is not provided
     }
 
     const [rows] = await pool.query(query, params);

@@ -75,7 +75,7 @@ exports.getReceipts = async ({ receiptId, userId, sorted, search, departmentId, 
         conditions.push('r.requester_id = ?');
         values.push(userId);
     }
-    if (search) {
+    if (search && typeof search === 'string') {
         conditions.push('(LOWER(r.description) LIKE ? OR LOWER(u.user_name) LIKE ? OR LOWER(u.email) LIKE ?)');
         const searchTerm = `%${search.toLowerCase()}%`;
         values.push(searchTerm, searchTerm, searchTerm);
@@ -114,10 +114,15 @@ exports.getReceipts = async ({ receiptId, userId, sorted, search, departmentId, 
     }
 
     // Add sorting clause
-    if (sorted) {
+    if (sorted && typeof sorted === 'string') {
         const [column, direction] = sorted.split(':');
         const allowedColumns = ['request_date', 'status', 'amount']; // Define allowed columns
-        if (allowedColumns.includes(column) && ['asc', 'desc'].includes(direction.toLowerCase())) {
+        if (
+            column &&
+            allowedColumns.includes(column) &&
+            direction &&
+            ['asc', 'desc'].includes(direction.toLowerCase())
+        ) {
             query += ` ORDER BY r.${column} ${direction.toUpperCase()}`;
         } else {
             query += ' ORDER BY r.request_date DESC'; // Default sorting
