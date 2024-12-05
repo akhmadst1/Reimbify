@@ -102,7 +102,7 @@ ImgUpload.uploadToGcsReimbursementProof = async (req, res, next) => {
         return res.status(400).json({ message: 'receiptId are required.' });
     }
 
-    const receiptArray = await getReceipts(receiptId);
+    const receiptArray = await getReceipts({ receiptId });
     if (receiptArray.length == 0) {
         return res.status(404).json({ message: 'Receipt not found.' });
     }

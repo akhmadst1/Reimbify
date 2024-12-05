@@ -205,7 +205,7 @@ exports.updateReceipt = async (req, res, next) => {
             return res.status(400).json({ message: 'All fields are required for update.' });
         }
 
-        const receiptArray = await getReceipts(receiptId);
+        const receiptArray = await getReceipts({ receiptId });
         if (receiptArray.length === 0) {
             return res.status(404).json({ message: 'Receipt not found.' });
         }
@@ -228,7 +228,7 @@ exports.deleteReceipt = async (req, res, next) => {
             return res.status(400).json({ message: 'Receipt ID is required for deletion.' });
         }
 
-        const receiptArray = await getReceipts(receiptId);
+        const receiptArray = await getReceipts({ receiptId });
         if (receiptArray.length === 0) {
             return res.status(404).json({ message: 'Receipt not found.' });
         }
@@ -277,7 +277,7 @@ exports.approveReceipt = async (req, res, next) => {
         }
 
         // Fetch the receipt
-        const receiptArray = await getReceipts(receiptId);
+        const receiptArray = await getReceipts({ receiptId });
         if (receiptArray.length === 0) {
             return res.status(404).json({ message: 'Receipt not found.' });
         }
