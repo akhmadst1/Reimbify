@@ -86,8 +86,8 @@ exports.createReceipt = async (req, res, next) => {
 
         // Validate if the user exists
         const userId = requesterId;
-        const user = await getUsers(userId);
-        if (!user) {
+        const userArray = await getUsers(userId);
+        if (userArray.length == 0) {
             return res.status(404).json({ message: 'Requester account not found.' });
         }
 
@@ -205,8 +205,8 @@ exports.updateReceipt = async (req, res, next) => {
             return res.status(400).json({ message: 'All fields are required for update.' });
         }
 
-        const receipt = await getReceipts(receiptId);
-        if (!receipt) {
+        const receiptArray = await getReceipts(receiptId);
+        if (receiptArray.length === 0) {
             return res.status(404).json({ message: 'Receipt not found.' });
         }
 
@@ -228,10 +228,11 @@ exports.deleteReceipt = async (req, res, next) => {
             return res.status(400).json({ message: 'Receipt ID is required for deletion.' });
         }
 
-        const receipt = await getReceipts(receiptId);
-        if (!receipt) {
+        const receiptArray = await getReceipts(receiptId);
+        if (receiptArray.length === 0) {
             return res.status(404).json({ message: 'Receipt not found.' });
         }
+        const receipt = receiptArray[0];
 
         await deleteReceiptById(receiptId);
 
@@ -276,10 +277,11 @@ exports.approveReceipt = async (req, res, next) => {
         }
 
         // Fetch the receipt
-        const receipt = await getReceipts(receiptId);
-        if (!receipt) {
+        const receiptArray = await getReceipts(receiptId);
+        if (receiptArray.length === 0) {
             return res.status(404).json({ message: 'Receipt not found.' });
         }
+        const receipt = receiptArray[0];
 
         // Ensure the receipt is under review before approval or rejection
         if (receipt.status !== 'under_review') {

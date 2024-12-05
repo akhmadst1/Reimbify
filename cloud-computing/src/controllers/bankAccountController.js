@@ -16,8 +16,8 @@ exports.createBankAccount = async (req, res, next) => {
         const { accountTitle, accountHolderName, accountNumber, bankId, userId } = req.body;
         
         // Validate user existence
-        const user = await getUsers(userId);
-        if (!user) {
+        const userArray = await getUsers(userId);
+        if (userArray.length === 0) {
             return res.status(404).json({ message: 'User not found. Cannot create bank account.' });
         }
         
@@ -47,8 +47,8 @@ exports.getBankAccounts = async (req, res, next) => {
         
         if (userId) {
             // Validate user existence
-            const user = await getUsers(userId);
-            if (!user) {
+            const userArray = await getUsers(userId);
+            if (userArray.length === 0) {
                 return res.status(404).json({ message: 'User not found.' });
             }
 
@@ -97,8 +97,8 @@ exports.updateBankAccount = async (req, res, next) => {
 
         // Ensure the associated user exists
         const userId = account.user.userId;
-        const user = await getUsers(userId);
-        if (!user) {
+        const userArray = await getUsers(userId);
+        if (userArray.length === 0) {
             return res.status(404).json({ message: 'User not found. Cannot update bank account.' });
         }
 
@@ -128,8 +128,8 @@ exports.deleteBankAccounts = async (req, res, next) => {
 
             // Ensure the associated user exists
             const userId = account.user.userId;
-            const user = await getUsers(userId);
-            if (!user) {
+            const userArray = await getUsers(userId);
+            if (userArray.length === 0) {
                 return res.status(404).json({ message: 'User not found. Cannot delete bank account.' });
             }
 
@@ -139,8 +139,8 @@ exports.deleteBankAccounts = async (req, res, next) => {
 
         if (userId) {
             // Validate user existence
-            const user = await getUsers(userId);
-            if (!user) {
+            const userArray = await getUsers(userId);
+            if (userArray.length === 0) {
                 return res.status(404).json({ message: 'User not found. Cannot delete bank accounts.' });
             }
 

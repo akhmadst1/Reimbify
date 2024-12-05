@@ -57,12 +57,12 @@ ImgUpload.uploadToGcsReceipts = async (req, res, next) => {
         return res.status(400).json({ message: 'userId are required.' });
     }
 
-    const user = await getUsers(userId);
-    if (!user) {
+    const userArray = await getUsers(userId);
+    if (userArray.length == 0) {
         return res.status(404).json({ message: 'User not found.' });
     }
 
-    const department = user.department;
+    const department = userArray[0].department;
 
     // Get current date components (year, month, day)
     const currentDate = new Date();
@@ -102,12 +102,12 @@ ImgUpload.uploadToGcsReimbursementProof = async (req, res, next) => {
         return res.status(400).json({ message: 'receiptId are required.' });
     }
 
-    const receipt = await getReceipts(receiptId);
-    if (!receipt) {
+    const receiptArray = await getReceipts(receiptId);
+    if (receiptArray.length == 0) {
         return res.status(404).json({ message: 'Receipt not found.' });
     }
 
-    const trimmed_url = receipt.receiptImageUrl.split("receipts/")[1]
+    const trimmed_url = receiptArray[0].receiptImageUrl.split("receipts/")[1]
     const gcsname = 'receipts/' + trimmed_url + '_reimbursement_proof';
     const file = bucket.file(gcsname);
 

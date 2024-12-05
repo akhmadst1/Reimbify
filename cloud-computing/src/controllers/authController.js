@@ -23,8 +23,8 @@ exports.register = async (req, res, next) => {
         const { email, password, userName, departmentId, role } = req.body;
 
         // Check if the email is already in use
-        const existingUser = await getUsers(email);
-        if (existingUser) {
+        const existingUserArray = await getUsers(email);
+        if (existingUserArray.length === 0) {
             return res.status(400).json({ message: 'Email already in use.' });
         }
 
@@ -63,8 +63,8 @@ exports.activateAccount = async (req, res, next) => {
         const { email, hashedPassword, userName, departmentId, defaultRole } = decoded;
 
         // Check if the user already exists (just in case)
-        const existingUser = await getUsers(email);
-        if (existingUser) {
+        const existingUserArray = await getUsers(email);
+        if (existingUserArray.length === 0) {
             return res.status(400).json({ message: 'Account already activated or email in use.' });
         }
 
@@ -84,9 +84,9 @@ exports.activateAccount = async (req, res, next) => {
 exports.loginOTP = async (req, res, next) => {
     try {
         const { email, password } = req.body;
-        const user = await getUsers(email);
-
-        if (!user) return res.status(404).json({ message: 'User not found' });
+        const userArray = await getUsers(email);
+        if (userArray.length === 0) return res.status(404).json({ message: 'User not found' });
+        const user = userArray[0];
 
         const userPassword = await getHashedPassword(user.userId);
 
@@ -109,9 +109,9 @@ exports.loginOTP = async (req, res, next) => {
 exports.login = async (req, res, next) => {
     try {
         const { email, password } = req.body;
-        const user = await getUsers(email);
-
-        if (!user) return res.status(404).json({ message: 'User not found' });
+        const userArray = await getUsers(email);
+        if (userArray.length === 0) return res.status(404).json({ message: 'User not found' });
+        const user = userArray[0];
 
         const userPassword = await getHashedPassword(user.userId);
 
@@ -131,9 +131,9 @@ exports.login = async (req, res, next) => {
 exports.verifyOtp = async (req, res, next) => {
     try {
         const { userId, otp } = req.body;
-        const user = await getUsers(userId);
-
-        if (!user) return res.status(404).json({ message: 'User not found' });
+        const userArray = await getUsers(userId);
+        if (userArray.length === 0) return res.status(404).json({ message: 'User not found' });
+        const user = userArray[0];
 
         const isValid = await verifyOtp(userId, otp);
 
@@ -155,8 +155,9 @@ exports.verifyOtp = async (req, res, next) => {
 exports.resendOtp = async (req, res, next) => {
     try {
         const { userId } = req.body;
-        const user = await getUsers(userId);
-        if (!user) return res.status(404).json({ message: 'User not found' });
+        const userArray = await getUsers(userId);
+        if (userArray.length === 0) return res.status(404).json({ message: 'User not found' });
+        const user = userArray[0];
 
         const newOtp = generateOtp();
         const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
@@ -174,8 +175,9 @@ exports.resendOtp = async (req, res, next) => {
 exports.forgotPassword = async (req, res, next) => {
     try {
         const { email } = req.body;
-        const user = await getUsers(email);
-        if (!user) return res.status(404).json({ message: 'User not found' });
+        const userArray = await getUsers(email);
+        if (userArray.length === 0) return res.status(404).json({ message: 'User not found' });
+        const user = userArray[0];
 
         const otp = generateOtp();
         const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
@@ -193,9 +195,9 @@ exports.forgotPassword = async (req, res, next) => {
 exports.resetPassword = async (req, res, next) => {
     try {
         const { userId, newPassword } = req.body;
-        const user = await getUsers(userId);
-
-        if (!user) return res.status(404).json({ message: 'User not found' });
+        const userArray = await getUsers(userId);
+        if (userArray.length === 0) return res.status(404).json({ message: 'User not found' });
+        const user = userArray[0];
 
         const hashedPassword = await bcrypt.hash(newPassword, 10);
         await updatePassword(userId, hashedPassword);
@@ -210,8 +212,9 @@ exports.resetPassword = async (req, res, next) => {
 exports.changePassword = async (req, res, next) => {
     try {
         const { userId, oldPassword, newPassword } = req.body;
-        const user = await getUsers(userId);
-        if (!user) return res.status(404).json({ message: 'User not found' });
+        const userArray = await getUsers(userId);
+        if (userArray.length === 0) return res.status(404).json({ message: 'User not found' });
+        const user = userArray[0];
 
         const userPassword = await getHashedPassword(user.userId);
 
@@ -255,16 +258,18 @@ exports.deleteUser = async (req, res, next) => {
 
         // Find user by ID if provided
         if (userId) {
-            user = await getUsers(userId);
-            if (!user) return res.status(404).json({ message: 'User not found by ID' });
+            const userArray = await getUsers(userId);
+            if (userArray.length === 0) return res.status(404).json({ message: 'User not found by ID' });
+            user = userArray[0];
 
             await deleteUserById(userId);
         }
 
         // Find user by email if provided
         if (email) {
-            user = await getUsers(email);
-            if (!user) return res.status(404).json({ message: 'User not found by email' });
+            const userArray = await getUsers(email);
+            if (userArray.length === 0) return res.status(404).json({ message: 'User not found by email' });
+            user = userArray[0];
 
             await deleteUserByEmail(email);
         }

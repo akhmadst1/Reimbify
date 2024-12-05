@@ -22,8 +22,8 @@ exports.updateProfileDetails = async (req, res, next) => {
         }
         
         // Check if the user exists
-        const user = await getUsers(userId);
-        if (!user) {
+        const userArray = await getUsers(userId);
+        if (userArray.length === 0) {
             return res.status(404).json({ message: 'User not found' });
         }
         
@@ -42,7 +42,7 @@ exports.updateProfileDetails = async (req, res, next) => {
         // Fetch updated user
         const updatedUser = await getUsers(userId);
 
-        res.status(200).json({ message: 'Profile details updated successfully', user: updatedUser });
+        res.status(200).json({ message: 'Profile details updated successfully', user: updatedUser[0] });
     } catch (error) {
         next(error); // Pass errors to the global error handler
     }
@@ -63,8 +63,8 @@ exports.updateProfileImage = [
 
         try {
             // Check if the user exists
-            const user = await getUsers(userId);
-            if (!user) {
+            const userArray = await getUsers(userId);
+            if (userArray.length === 0) {
                 return res.status(404).json({ message: 'User not found' });
             }
 
@@ -113,10 +113,11 @@ exports.deleteProfileImage = async (req, res, next) => {
         const { userId } = req.query; // User ID
 
         // Check if the user exists
-        const user = await getUsers(userId);
-        if (!user) {
+        const userArray = await getUsers(userId);
+        if (userArray.length === 0) {
             return res.status(404).json({ message: 'User not found' });
         }
+        const user = userArray[0];
 
         // Get the profile image URL
         const profileImageUrl = user.profileImageUrl;
