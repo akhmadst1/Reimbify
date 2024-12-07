@@ -1,2 +1,0 @@
-crop_detection=https://storage.googleapis.com/reimbify.appspot.com/models/model_cnn_cropbanyak_again.h5
-rotation_detection=https://storage.googleapis.com/reimbify.appspot.com/models/model_cnn_valid_rotate_fix.h5
