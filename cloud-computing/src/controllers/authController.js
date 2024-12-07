@@ -24,7 +24,7 @@ exports.register = async (req, res, next) => {
 
         // Check if the email is already in use
         const existingUserArray = await getUsers({ email });
-        if (existingUserArray.length === 0) {
+        if (existingUserArray[0]) {
             return res.status(400).json({ message: 'Email already in use.' });
         }
 
