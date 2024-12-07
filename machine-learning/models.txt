@@ -1,0 +1,2 @@
+crop_detection=https://storage.googleapis.com/reimbify.appspot.com/models/crop.h5
+rotation_detection=https://storage.googleapis.com/reimbify.appspot.com/models/rotation.h5
