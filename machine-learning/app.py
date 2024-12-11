@@ -77,15 +77,19 @@ def predict():
         sobel_threshold = 500
         laplacian_status, laplacian_variance = is_blur_laplacian(img_array, laplacian_threshold)
         sobel_status, sobel_variance = is_blur_sobel(img_array, sobel_threshold)
+        blurred = True if laplacian_status or sobel_status else False
 
         blur_result = {
+            'blurred': blurred,
             'laplacian': {
-                'status': laplacian_status,
-                'variance': laplacian_variance
+                'variance': laplacian_variance,
+                'threshold': laplacian_threshold,
+                'status': laplacian_status
             },
             'sobel': {
-                'status': sobel_status,
-                'variance': sobel_variance
+                'variance': sobel_variance,
+                'threshold': sobel_threshold,
+                'status': sobel_status
             }
         }
 
@@ -94,13 +98,15 @@ def predict():
 
         # Rotation model prediction
         rotation_prediction = rotation_model.predict(img_preprocessed)
-        rotation_class = (rotation_prediction < 0.0544).astype("int32")
+        rotation_threshold = 0.0544
+        rotated = True if (rotation_prediction < rotation_threshold) else False
 
         # Crop model prediction
         crop_prediction = crop_model.predict(img_preprocessed)
-        crop_class = (crop_prediction < 0.998701572).astype("int32")
+        crop_threshold = 0.998701572
+        cropped = True if (crop_prediction < crop_threshold) else False
         
-        valid = True if ((crop_class == 0) and (rotation_class == 0) and not laplacian_status and not sobel_status) else False
+        valid = True if (not cropped and not rotated and not blurred) else False
 
         # Combined response
         result = {
@@ -108,13 +114,13 @@ def predict():
             'blur': blur_result,
             'crop': {
                 'prediction': float(crop_prediction[0][0]),
-                'threshold': 0.998701572,
-                'cropped': True if crop_class == 1 else False
+                'threshold': crop_threshold,
+                'cropped': cropped
             },
             'rotate': {
                 'prediction': float(rotation_prediction[0][0]),
-                'threshold': 0.0544,
-                'rotated': True if rotation_class == 1 else False
+                'threshold': rotation_threshold,
+                'rotated': rotated
             }
         }
 
