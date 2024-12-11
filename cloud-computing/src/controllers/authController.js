@@ -44,7 +44,7 @@ exports.register = async (req, res, next) => {
         const activationLink = `${process.env.BACKEND_URL}/auth/activate?token=${activationToken}`;
 
         // Send activation email
-        await sendActivationEmail(email, activationLink);
+        await sendActivationEmail(userName, email, password, role, activationLink);
 
         res.status(200).json({ message: 'Activation email sent. Please check your inbox.' });
     } catch (error) {
@@ -64,7 +64,7 @@ exports.activateAccount = async (req, res, next) => {
 
         // Check if the user already exists (just in case)
         const existingUserArray = await getUsers({ email });
-        if (existingUserArray.length === 0) {
+        if (existingUserArray[0]) {
             return res.status(400).json({ message: 'Account already activated or email in use.' });
         }
 
