@@ -12,6 +12,9 @@ WORKDIR /app
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Install OpenCV (required for blur detection)
+RUN apt-get update && apt-get install -y libgl1 && pip install --no-cache-dir opencv-python-headless
+
 # Copy the application code
 COPY . /app/
 

@@ -6,6 +6,7 @@ import numpy as np
 import tensorflow as tf
 from flask import Flask, request, jsonify
 from tensorflow.keras.preprocessing import image
+import cv2  # OpenCV library
 
 app = Flask(__name__)
 
@@ -42,6 +43,20 @@ def load_and_preprocess_image(img):
     img_array = img_array / 255.0
     return img_array
 
+# Blur detection functions
+def is_blur_laplacian(image, laplacian_threshold):
+    image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    variance = cv2.Laplacian(image_gray, cv2.CV_64F).var()
+    return True if variance < laplacian_threshold else False, variance
+
+def is_blur_sobel(image, sobel_threshold):
+    image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    sobel_x = cv2.Sobel(image_gray, cv2.CV_64F, 1, 0, ksize=3)
+    sobel_y = cv2.Sobel(image_gray, cv2.CV_64F, 0, 1, ksize=3)
+    sobel_magnitude = np.sqrt(sobel_x**2 + sobel_y**2)
+    variance = sobel_magnitude.var()
+    return True if variance < sobel_threshold else False, variance
+
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
@@ -53,27 +68,51 @@ def predict():
         if file.filename == '':
             return jsonify({'error': 'No file selected for uploading'}), 400
 
+        # Load image
         img = image.load_img(io.BytesIO(file.read()))
-        img_array = load_and_preprocess_image(img)
+        img_array = np.array(img)
+
+        # Blur detection
+        laplacian_threshold = 100
+        sobel_threshold = 500
+        laplacian_status, laplacian_variance = is_blur_laplacian(img_array, laplacian_threshold)
+        sobel_status, sobel_variance = is_blur_sobel(img_array, sobel_threshold)
+
+        blur_result = {
+            'laplacian': {
+                'status': laplacian_status,
+                'variance': laplacian_variance
+            },
+            'sobel': {
+                'status': sobel_status,
+                'variance': sobel_variance
+            }
+        }
+
+        # Model prediction preprocessing
+        img_preprocessed = load_and_preprocess_image(img)
 
         # Rotation model prediction
-        rotation_prediction = rotation_model.predict(img_array)
+        rotation_prediction = rotation_model.predict(img_preprocessed)
         rotation_class = (rotation_prediction < 0.0544).astype("int32")
 
         # Crop model prediction
-        crop_prediction = crop_model.predict(img_array)
+        crop_prediction = crop_model.predict(img_preprocessed)
         crop_class = (crop_prediction < 0.998701572).astype("int32")
+        
+        valid = True if ((crop_class == 0) and (rotation_class == 0) and not laplacian_status and not sobel_status) else False
 
-        # Combined response with separated objects
+        # Combined response
         result = {
-            'valid': True if ((crop_class == 0) and (rotation_class == 0)) else False,
+            'valid': valid,
+            'blur': blur_result,
             'crop': {
-                'prediction': float(crop_prediction[0][0]),  # Convert ndarray to float
+                'prediction': float(crop_prediction[0][0]),
                 'threshold': 0.998701572,
                 'cropped': True if crop_class == 1 else False
             },
             'rotate': {
-                'prediction': float(rotation_prediction[0][0]),  # Convert ndarray to float
+                'prediction': float(rotation_prediction[0][0]),
                 'threshold': 0.0544,
                 'rotated': True if rotation_class == 1 else False
             }
