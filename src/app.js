@@ -17,6 +17,11 @@ app.use(bodyParser.urlencoded({ extended: true }))
 app.use(express.json());
 app.use(cors({ origin: '*' }));
 
+// Base URL
+app.get('/', (req, res) => {
+    res.send('Hello! Welcome to our API. Use the specific endpoints to interact with the system.');
+});
+
 // Routes
 app.use('/auth', authRoutes);
 app.use('/profile', profileRoutes);
